@@ -44,6 +44,7 @@
     quit: "退出 Kestrel",
     banner: "试用剩余 {n} 天",
     bannerAct: "立即激活",
+    bannerMachine: "机器码",
   } : {
     license: "License",
     trial: "Trial",
@@ -79,6 +80,7 @@
     quit: "Quit Kestrel",
     banner: "{n} days of trial left",
     bannerAct: "Activate now",
+    bannerMachine: "Machine code",
   };
 
   let state = null;
@@ -451,7 +453,7 @@ body.kl-gated { overflow: hidden; }
     const about = document.getElementById("about");
     if (!about || !state) return;
     about.querySelector("#licenseRow")?.remove();
-    about.append(aboutRow());
+    about.prepend(aboutRow());
   }
 
   function watchAbout() {
@@ -474,6 +476,12 @@ body.kl-gated { overflow: hidden; }
     banner = h("div", "kl-banner");
     banner.setAttribute("role", "status");
     banner.append(h("b", "", "Kestrel"), document.createTextNode(S.banner.replace("{n}", state.daysLeft)));
+    if (state.machine) {
+      const mc = h("button", "", S.bannerMachine);
+      mc.type = "button";
+      mc.onclick = () => copyText(state.machine, mc);
+      banner.append(mc);
+    }
     const act = h("button", "", S.bannerAct);
     act.type = "button";
     act.onclick = () => { hideBanner(); openDialog(); };
@@ -504,7 +512,7 @@ body.kl-gated { overflow: hidden; }
       showGate();
     } else {
       hideGate();
-      if (state.status === "trial" && state.daysLeft <= 2) showBanner();
+      if (state.status === "trial") showBanner();
       else hideBanner();
     }
     renderAbout();
