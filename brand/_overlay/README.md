@@ -15,14 +15,14 @@ upstream repository and its history for the full list:
 ## Download
 
 Windows 10/11, amd64. Take `kestrel-windows-amd64.exe` from the
-[latest release](https://github.com/zx5920/kestrel/releases/latest) and run
+[latest release](https://github.com/zx5920/Falco/releases/latest) and run
 it. There is no installer and no separate runtime to add: WebView2 ships with
 Windows.
 
 ## Updates
 
 Updates check **your** release feed,
-`https://github.com/<owner>/kestrel/releases/latest/download/update.json`, and
+`https://github.com/zx5920/Falco/releases/latest/download/update.json`, and
 they are **on by default**, as upstream's are: Kestrel looks every six hours
 and at start-up, downloads a newer version as soon as it finds one, and offers
 **Restart to update** — the window comes back on the new version, and the old
