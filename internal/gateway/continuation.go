@@ -17,7 +17,6 @@ package gateway
 // isn't asked to go on (prefill.go).
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -85,6 +84,14 @@ var errStreamCut = errors.New("stream cut mid-reply")
 // and be whole, so Chat is not one.
 var errEndedShort = errors.New("the reply ended before it was complete")
 
+// errDoneSaid ends a reply's read at the [DONE] a Chat upstream says its
+// reply over with: the reply is whole by its protocol, its usage in the
+// chunks before it, and a vendor that holds the connection after it — a
+// relay slow to hang up (#5936) — kept the client waiting on the
+// translated reply's end, said only when the reading gave up, until the
+// client gave up first.
+var errDoneSaid = errors.New("the stream said its reply over")
+
 // endsAtProbeCap says whether a reply that stopped short of its end, its
 // connection closed cleanly, is taken as one that ended at its length:
 // the request capped it at a short probe's worth (cutVoidTokens) and the
@@ -125,7 +132,7 @@ func spends(ev Event) bool {
 // a reply said nothing, and is the empty reply's to answer (#667), not a
 // cut one's.
 func geminiEnds(data []byte) bool {
-	if !bytes.Contains(data, []byte(`"finishReason"`)) && bytes.Contains(data, []byte(`"candidates"`)) {
+	if !bodyHas(data, `"finishReason"`) && bodyHas(data, `"candidates"`) {
 		return false
 	}
 	type chunk struct {
@@ -672,6 +679,11 @@ func (s *Server) streamTranslated(w http.ResponseWriter, r *http.Request, p prov
 					if cut || relooped {
 						return errStreamCut
 					}
+					if saidOver(actual, data) {
+						// the upstream's own end: what the reply has is
+						// whole, hold or not (#5936)
+						return errDoneSaid
+					}
 					return nil
 				}, func() {
 					wmu.Lock()
@@ -681,7 +693,9 @@ func (s *Server) streamTranslated(w http.ResponseWriter, r *http.Request, p prov
 				})
 				stopKeep()
 				res.Body.Close()
-				if errors.Is(serr, errStreamCut) {
+				if errors.Is(serr, errStreamCut) || errors.Is(serr, errDoneSaid) {
+					// a cut's error event is in hand; a [DONE] said
+					// the reply over: neither is the read's to fail on
 					serr = nil
 				}
 				if serr == nil && failed == "" && !ended && !relooped &&
@@ -763,7 +777,7 @@ func (s *Server) streamTranslated(w http.ResponseWriter, r *http.Request, p prov
 				// nowhere: its budget is spent, and a second ask at the
 				// same max_tokens would mostly spend it twice over before
 				// the error (#2972, its review)
-				failed = cutVoidFailed(p.Name)
+				failed = cutVoidFailed(p.Name, request.MaxTokens)
 				break
 			}
 			for _, ev := range kept {
@@ -819,4 +833,23 @@ func (s *Server) streamTranslated(w http.ResponseWriter, r *http.Request, p prov
 		enc.event(Event{Kind: KError, Text: failed, Code: failedCode})
 	}
 	return 200, failed
+}
+
+// saidOver reports whether an upstream event is its protocol's own last
+// word on a reply that went well: Chat's [DONE], Anthropic's message_stop,
+// Responses' completed, incomplete or failed. A relay that holds the
+// connection after it must not hold the translated reply's end (#5936).
+func saidOver(proto provider.Protocol, data string) bool {
+	switch proto {
+	case provider.Chat:
+		return strings.TrimSpace(data) == "[DONE]"
+	case provider.Anthropic:
+		return eventType(data) == "message_stop"
+	case provider.Responses:
+		switch eventType(data) {
+		case "response.completed", "response.incomplete", "response.failed":
+			return true
+		}
+	}
+	return false
 }

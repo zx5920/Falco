@@ -263,7 +263,7 @@ func tinyBody(q Provider, proto Protocol, model string) (url, body string) {
 			// Factory's generate route. droid sends no stream field.
 			return q.Base(Gemini) + "/generate", fmt.Sprintf(`{"model":%q,"contents":[{"role":"user","parts":[{"text":"hi"}]}]}`, model)
 		}
-		return q.Gemini + GeminiPath(model, false), `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":16}}`
+		return q.Base(Gemini) + GeminiPath(model, false), `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"generationConfig":{"maxOutputTokens":16}}`
 	}
 	return "", ""
 }
@@ -425,9 +425,24 @@ func (p Provider) testOne(ctx context.Context, model string) Result {
 	// (AccountsFor; #4992, scutken: a newapi pool's grok-4.7, served by
 	// its third account alone, was asked of the first and failed 503 "no
 	// available channel" while real requests were answered)
-	acct, ok := p.accountFor(model)
-	if !ok {
-		return Result{Model: model, Error: "every account that's on is set not to serve this model"}
+	var acct Provider
+	if ref := testOnRef(ctx); ref != "" && p.Account != nil {
+		// the account the user picked to test (TestOn)
+		var found bool
+		if acct, found = p.accountNamed(ref); !found {
+			return Result{Model: model, Error: fmt.Sprintf("no account %q that's on", ref)}
+		}
+	} else if ref != "" {
+		var found bool
+		if p, found = p.keyNamed(ref); !found {
+			return Result{Model: model, Error: "no such key that's on"}
+		}
+		acct = p
+	} else {
+		var ok bool
+		if acct, ok = p.accountFor(model); !ok {
+			return Result{Model: model, Error: "every account that's on is set not to serve this model"}
+		}
 	}
 	ctx, p = p.loggedAs(ctx, acct), acct
 	if p.isClaudeAccount() {
@@ -789,6 +804,14 @@ func (p Provider) ownRequests(ctx context.Context, kind string) context.Context 
 // write the status alone, so a failed test's row said nothing of why
 // (ysm119 on Discord: "no answer", and no error to find anywhere).
 func probe(ctx context.Context, p Provider, proto Protocol, url string, body []byte, model string, wait time.Duration) Result {
+	r := probeRetried(ctx, p, proto, url, body, model, wait)
+	if r.Account == "" {
+		r.Account = p.testedAccount()
+	}
+	return r
+}
+
+func probeRetried(ctx context.Context, p Provider, proto Protocol, url string, body []byte, model string, wait time.Duration) Result {
 	r := probeAt(ctx, p, proto, url, body, model, wait)
 	if r.Status != http.StatusNotFound {
 		return r
@@ -1144,6 +1167,9 @@ func APIError(b []byte, fallback string) string {
 	if cmdGoNoAPI.Match(b) {
 		return apiError(b, fallback) + " — " + CommandCodeGoHint
 	}
+	if harnessOnly.Match(b) && !bytes.Contains(b, []byte(HarnessOnlyHint)) {
+		return apiError(b, fallback) + " — " + HarnessOnlyHint
+	}
 	return apiError(b, fallback)
 }
 
@@ -1349,7 +1375,7 @@ func apiError(b []byte, fallback string) string {
 	// a body in no shape known is shown as it is, cut short, so what the
 	// vendor said isn't lost; other markup (an XML error, a page's
 	// fragment) by its words, its tags taken out
-	s := strings.Join(strings.Fields(string(b)), " ")
+	s := strings.Join(strings.Fields(QuotedReply(b)), " ")
 	if strings.HasPrefix(s, "<") {
 		if s = MarkupText(b); s == "" {
 			return fallback
