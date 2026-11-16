@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/app.js b/internal/gui/assets/app.js
-index 4567b5cae..6993b7db6 100644
+index 4567b5cae..e0ad25a26 100644
 --- a/internal/gui/assets/app.js
 +++ b/internal/gui/assets/app.js
 @@ -4578,7 +4578,9 @@ function updateStuck(u) {
@@ -148,3 +148,30 @@ index 4567b5cae..6993b7db6 100644
      onOff(!s.noUsageStats, (on) => savePrefs({ ...keep, noUsageStats: !on })));
    if (!featureHides($('#nav button[data-view="masking"]'))) {
      const open = el("button", "", t("Open"));
+@@ -24693,3 +24682,26 @@ if (mode === "window" && params.get("import")) {
+ }
+ if (mode === "window" && params.get("ask") === "quit") { params.delete("ask"); history.replaceState(null, "", "?" + params); askQuit(); }
+ if (mode === "window" && params.get("view") === "providers" && params.get("edit")) editing = params.get("edit");
++
++// Non-functional mentions of the code host are shown as a neutral phrase.
++// GitHub Copilot and GitHub Token keep their names: they are products, and
++// renaming them would say less than the truth. Text only; nothing is fetched.
++const CODE_HOST = document.documentElement.lang?.startsWith("zh") ? "代码托管" : "code host";
++const KEEPS_GITHUB = /Copilot|Token|token|令牌/;
++function softenCodeHost(root) {
++  if (!root) return;
++  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
++  for (let n = w.nextNode(); n; n = w.nextNode()) {
++    const s = n.nodeValue;
++    if (!s || !s.includes("GitHub") || KEEPS_GITHUB.test(s)) continue;
++    const p = n.parentElement;
++    if (!p || p.closest("input, textarea, select, script, style, [contenteditable='true']")) continue;
++    n.nodeValue = s.replace(/\bGitHub\b/g, CODE_HOST);
++  }
++}
++softenCodeHost(document.body);
++let softenTick = 0;
++new MutationObserver(() => {
++  if (softenTick) return;
++  softenTick = setTimeout(() => { softenTick = 0; softenCodeHost(document.body); }, 120);
++}).observe(document.body, { childList: true, subtree: true, characterData: true });
