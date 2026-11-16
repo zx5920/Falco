@@ -1,0 +1,16 @@
+diff --git a/internal/gui/update.go b/internal/gui/update.go
+index 115b58cc1..81794a237 100644
+--- a/internal/gui/update.go
++++ b/internal/gui/update.go
+@@ -826,8 +826,9 @@ func (u *updater) jsonIn(lang string) updateJSON {
+ 		}
+ 	}
+ 	if u.latest != nil {
+-		// the notes without their download links: kestrel downloads it itself
+-		j.Latest, j.Notes, j.URL = u.latest.Version, update.StripInstall(u.latest.Notes), u.latest.URL
++		// the notes without their download links: kestrel downloads it itself;
++		// no release page url either, since it would name this build's code host
++		j.Latest, j.Notes = u.latest.Version, update.StripInstall(u.latest.Notes)
+ 	}
+ 	return j
+ }
