@@ -44,6 +44,18 @@ sync.ps1              sync → apply → build → update.json (→ gh release)
 `brand/apply` runs them in that order and writes `.brand-applied` into the
 tree, so a tree cannot be branded twice.
 
+## Activation
+
+`internal/license` (an overlay) is this fork's own: a seven-day trial from the
+first run, then an offline activation code bound to the machine. Codes are
+ed25519-signed; the public key is in `license.go`, and the private key is the
+publisher's — it is not in this repository, so a clone cannot issue codes.
+`internal/gui/license_api.go` serves `/api/license`; `assets/license.js` draws
+the gate, the trial reminder and the Settings › About row. `api.go` gains one
+`licenseRoutes(mux)` line and `index.html` one script tag, both patches.
+A copy of this repository can patch any of it out: the gate is a product
+decision, not a lock on the source.
+
 ## Day to day
 
 ```powershell

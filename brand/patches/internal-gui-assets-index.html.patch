@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/index.html b/internal/gui/assets/index.html
-index d1fcdad99..af11c3c95 100644
+index d1fcdad99..799c7a992 100644
 --- a/internal/gui/assets/index.html
 +++ b/internal/gui/assets/index.html
 @@ -7,7 +7,7 @@
@@ -33,3 +33,11 @@ index d1fcdad99..af11c3c95 100644
        <div class="row pref">
          <div class="who"><div class="name" data-t>Language</div></div>
          <button type="button" id="langPick" class="sess-pick pref-pick" aria-label="Language" aria-haspopup="menu" aria-expanded="false"></button>
+@@ -665,6 +661,7 @@
+ <script src="plugins/routing/settings.js"></script>
+ <script src="plugins/sessions/settings.js"></script>
+ <script src="plugins/redact/settings.js"></script>
++<script src="license.js"></script>
+ <script src="start.js"></script>
+ </body>
+ </html>

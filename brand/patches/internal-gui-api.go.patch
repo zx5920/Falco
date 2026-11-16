@@ -1,0 +1,12 @@
+diff --git a/internal/gui/api.go b/internal/gui/api.go
+index 6c2e14963..6ea3ac902 100644
+--- a/internal/gui/api.go
++++ b/internal/gui/api.go
+@@ -1213,6 +1213,7 @@ func Handler(w Windows, gw *gateway.Server) http.Handler {
+ 	pluginPageRoutes(mux, isWeb(w))
+ 	feedbackRoutes(mux)
+ 	appearanceRoutes(mux)
++	licenseRoutes(mux)
+ 	// the app's page closed or hidden: what its pages keep goes soon
+ 	// (awayPage); a write of nothing, so held's Changed passes it by
+ 	mux.HandleFunc("POST /api/page-away", func(rw http.ResponseWriter, r *http.Request) {
