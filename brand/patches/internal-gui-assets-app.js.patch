@@ -1,8 +1,8 @@
 diff --git a/internal/gui/assets/app.js b/internal/gui/assets/app.js
-index 6e47e11f4..6496c39ea 100644
+index 4567b5cae..ef0be6b49 100644
 --- a/internal/gui/assets/app.js
 +++ b/internal/gui/assets/app.js
-@@ -4509,7 +4509,9 @@ function updateStuck(u) {
+@@ -4578,7 +4578,9 @@ function updateStuck(u) {
  // ---------- what's new ----------
  // After an update the window (or kestrel web) shows each release's changes
  // since the one last run, once; Settings' version row opens it again.
@@ -13,7 +13,7 @@ index 6e47e11f4..6496c39ea 100644
  let whatsNewAsked = false;
  // cliBehindOnce: the terminal's kestrel is a copy, not the installer's
  // link, so it can't follow updates (#531); advice once per load, window only
-@@ -8480,7 +8482,7 @@ function iconPicker(ed) {
+@@ -8580,7 +8582,7 @@ function iconPicker(ed) {
        box.append(reset);
      }
      if (asking) {
@@ -22,35 +22,74 @@ index 6e47e11f4..6496c39ea 100644
        u.className = "icon-url";
        u.setAttribute("aria-label", t("Image URL"));
        u.onkeydown = (e) => {
-@@ -19924,10 +19926,10 @@ function renderUpdateMirror(r, s) {
+@@ -20002,7 +20004,7 @@ function renderCLI(r) {
+ }
+ 
+ // Settings' Download source (#893): a GitHub mirror before github.com, as
+-// `kestrel update mirror` writes; the feed and SHA-256 stay usemagpie.ai's
++// `kestrel update mirror` writes; the feed and SHA-256 stay the feed's
+ let mirrorEditing = false, mirrorDraft = "", mirrorErr = "";
+ function setUpdateMirror(mirror) {
+   return writingPrefs(api("settings/update-mirror", { mirror }))
+@@ -20018,26 +20020,39 @@ function renderUpdateMirror(r, s) {
    const sub = el("div", "sub");
    who.append(sub);
    const m = s.updateMirror || "";
 -  sub.textContent = mirrorErr || (m ? t("Updates are downloaded from usemagpie.ai, and through this mirror when that fails, each checked against usemagpie.ai's checksum")
 -    : t("Updates are downloaded from usemagpie.ai, and from GitHub when that fails; a mirror can stand in for GitHub where it is slow"));
+-  // the docs' Mirrors page says which mirror and how (WeltAn_X on X)
+-  const more = el("button", "sub-more", t("How mirrors work"));
+-  more.onclick = () => api("open", { url: "https://usemagpie.ai/docs/" + ({ zh: "zh/", "zh-TW": "zh/", ja: "ja/" }[locale] || "") + "mirrors#settings" }).catch(() => {});
+-  sub.append(" ", more);
 +  sub.textContent = mirrorErr || (m ? t("Updates come from the feed this build is pointed at, and through this mirror when that fails, each checked against the feed's checksum")
 +    : t("Updates come from the feed this build is pointed at, and from its fallback when that fails; a mirror can stand in where the feed is slow"));
    sub.classList.toggle("err", !!mirrorErr);
 -  sub.title = t("The update and its checksum always come from usemagpie.ai; a file from the mirror that doesn't match it is not installed.");
+-  if (mirrorEditing) return mirrorEdit(r, s, sub, val);
+-  if (m) {
+-    const official = el("button", "text", t("Remove mirror"));
+-    official.onclick = () => setUpdateMirror("").catch(statusTErr);
+-    const change = el("button", "text", t("Change"));
+-    change.onclick = () => editMirror(r, s, m);
+-    val.append(el("code", "", m), change, official);
+-  } else {
+-    const add = el("button", "text", t("Use a mirror…"));
+-    add.onclick = () => editMirror(r, s, "");
+-    val.append(el("code", "", "usemagpie.ai"), add);
 +  sub.title = t("The update and its checksum always come from the update feed; a file from the mirror that doesn't match it is not installed.");
-   if (!mirrorEditing) {
-     if (m) {
-       const official = el("button", "text", t("Remove mirror"));
-@@ -19938,11 +19940,11 @@ function renderUpdateMirror(r, s) {
-     } else {
-       const add = el("button", "text", t("Use a mirror…"));
-       add.onclick = () => { mirrorEditing = true; mirrorDraft = ""; renderUpdateMirror(r, s); };
--      val.append(el("code", "", "usemagpie.ai"), add);
++  if (!mirrorEditing) {
++    if (m) {
++      const official = el("button", "text", t("Remove mirror"));
++      official.onclick = () => setUpdateMirror("").catch(statusTErr);
++      const change = el("button", "text", t("Change"));
++      change.onclick = () => { mirrorEditing = true; mirrorDraft = m; renderUpdateMirror(r, s); };
++      val.append(el("code", "", m), change, official);
++    } else {
++      const add = el("button", "text", t("Use a mirror…"));
++      add.onclick = () => { mirrorEditing = true; mirrorDraft = ""; renderUpdateMirror(r, s); };
 +      val.append(el("code", "", "GitHub"), add);
-     }
-     return;
++    }
++    return;
    }
--  const i = input(mirrorDraft, "https://mirror.example/");
 +  const i = input(mirrorDraft, "https://…/");
-   i.className = "words update-mirror-input";
-   i.setAttribute("aria-label", t("Mirror address"));
-   i.oninput = () => { mirrorDraft = i.value; };
-@@ -20171,24 +20173,11 @@ function renderSettings() {
++  i.className = "words update-mirror-input";
++  i.setAttribute("aria-label", t("Mirror address"));
++  i.oninput = () => { mirrorDraft = i.value; };
++  const save = el("button", "text", t("Save"));
++  save.onclick = () => {
++    const v = i.value.trim();
++    if (!v) return i.focus(NO_SCROLL);
++    setUpdateMirror(v).catch((e) => { mirrorErr = t(e.message); statusTErr(e); renderSettings(); });
++  };
++  const cancel = el("button", "text", t("Cancel"));
++  cancel.onclick = () => { mirrorEditing = false; mirrorDraft = mirrorErr = ""; renderUpdateMirror(r, s); };
++  i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") save.onclick(); else if (e.key === "Escape") cancel.onclick(); };
++  val.append(i, cancel, save);
++  queueMicrotask(() => { if (i.isConnected && document.activeElement !== i) i.focus(NO_SCROLL); });
+ }
+ 
+ function renderSettings() {
+@@ -20256,34 +20271,11 @@ function renderSettings() {
      const who = self.pubWho?.(s) || t("Public address");
      row(who, t("KESTREL_PUBLIC_URL: where other computers reach the gateway, with a gateway key"), s.publicURL, copyBtn(s.publicURL, who)).id = "publicURLRow";
    }
@@ -74,10 +113,20 @@ index 6e47e11f4..6496c39ea 100644
 -  repo.title = "github.com/kestrel-app/kestrel";
 -  repo.onclick = () => api("open", { url: "https://github.com/kestrel-app/kestrel" }).catch(() => {});
 -  row(t("Community"), t("questions, ideas and feedback, on Discord or GitHub"), "", join, repo);
+-  // the facts that help a fix, copied (never put in the link), then the
+-  // feedback post on X, to reply to there (River_WLan on X)
+-  const report = el("button", "text", t("Open"));
+-  report.onclick = async () => {
+-    const f = await fetch("/api/feedback?surface=" + (web ? "browser" : "app")).then((r) => r.ok ? r.json() : null).catch(() => null);
+-    if (!f) return status(t("Couldn't read the details to copy"), "err");
+-    await copy(f.text, "", report, t("Details copied. Paste them in your reply"));
+-    api("open", { url: f.url }).catch(statusErr);
+-  };
+-  row(t("Report a problem"), "", "", report);
    // kestrel uninstall, from the app (Jevik_AI on X deleted kestrel's folders
    // by hand and Codex kept pointing at a gateway that was gone). Never in a
    // browser: kestrel web would be taken off the computer serving the page.
-@@ -20938,9 +20927,8 @@ function renderGitHubToken(s) {
+@@ -21031,9 +21023,8 @@ function renderGitHubToken(s) {
    save.onclick = () => { const v = i.value.trim(); if (!v) return i.focus(); set(v); };
    i.oninput = () => { githubTokenDraft = i.value; };
    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") save.onclick(); };
@@ -89,7 +138,7 @@ index 6e47e11f4..6496c39ea 100644
  }
  
  // warmTimes is a daily warm-up's times of day as settings keep them: the
-@@ -21927,7 +21915,7 @@ function renderRedact(s, keep) {
+@@ -22041,7 +22032,7 @@ function renderRedact(s, keep) {
      }, settingsErr))).id = "agentTelemetryAllRow";
    rowIn(share, t("Count me as a user"), t("Once a day, a random id for this computer with kestrel's version and system"),
      onOff(!s.noStats, (on) => savePrefs({ ...keep, noStats: !on })));

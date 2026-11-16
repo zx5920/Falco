@@ -22,7 +22,8 @@
     "magpie_via",
     "magpie_fast",
     "magpie_ultra",
-    "MAGPIE.md"
+    "MAGPIE.md",
+    "chatpage/magpie.js"
   ],
 
   "exts": [

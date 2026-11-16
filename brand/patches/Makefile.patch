@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index cb6c91e..ec3fedc 100644
+index b6f462648..8a9deab85 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1,10 +1,10 @@
@@ -15,7 +15,7 @@ index cb6c91e..ec3fedc 100644
  endif
  
  # A tag may hold $, ( or `, which the shell lines below would run: the
-@@ -68,14 +68,14 @@ test-ui:
+@@ -74,14 +74,14 @@ test-ui:
  
  # macOS bundle: menu bar app with no Dock icon (LSUIElement).
  app: build-release
@@ -38,7 +38,7 @@ index cb6c91e..ec3fedc 100644
  
  icons:
  	@go run build/icon/gen.go tray internal/gui/tray.png
-@@ -88,20 +88,20 @@ icons:
+@@ -94,20 +94,20 @@ icons:
  	@go run build/icon/gen.go win-ico internal/gui/icon-windows.ico
  	@go run build/icon/gen.go app 1024 internal/gui/icon-1024.png
  	@go run build/icon/gen.go app 256 internal/gui/icon-256.png
@@ -71,12 +71,12 @@ index cb6c91e..ec3fedc 100644
  
  release: clean build-release
  	@mkdir -p dist
-@@ -144,7 +144,7 @@ release-linux: assets-pack
+@@ -150,7 +150,7 @@ release-linux: assets-pack
  	@go build -tags "$(TAGS) packedassets" -trimpath -ldflags="$(LDFLAGS)" -o dist/kestrel-linux-$(shell go env GOARCH) .
  
  clean:
--	rm -rf kestrel kestrel.exe kestrel.app dist internal/gui/assets.zip rsrc_windows_*.syso internal/update/launcher-*.com
-+	rm -rf kestrel kestrel.exe Kestrel.app dist internal/gui/assets.zip rsrc_windows_*.syso internal/update/launcher-*.com
+-	rm -rf kestrel kestrel.exe kestrel.app dist .overlay internal/gui/assets.zip rsrc_windows_*.syso internal/update/launcher-*.com
++	rm -rf kestrel kestrel.exe Kestrel.app dist .overlay internal/gui/assets.zip rsrc_windows_*.syso internal/update/launcher-*.com
  
  # Development: the UI is served from internal/gui/assets and the window
  # reloads itself when a file there is saved. With fswatch installed, the

@@ -1,5 +1,5 @@
 diff --git a/internal/gui/app.go b/internal/gui/app.go
-index 7e82b60..f376976 100644
+index 2b92cbab2..4e8bba8e8 100644
 --- a/internal/gui/app.go
 +++ b/internal/gui/app.go
 @@ -209,7 +209,7 @@ func (h *host) ChooseFolder(title string) (string, error) {
@@ -11,7 +11,7 @@ index 7e82b60..f376976 100644
  
  // FitPanel grows or shrinks the panel to its content and keeps it anchored
  // under the tray icon; a shown panel glides there when g says how. height
-@@ -429,7 +429,7 @@ func Run(version string, showMain bool, link string) error {
+@@ -435,7 +435,7 @@ func Run(version string, showMain bool, link string) error {
  		// second launch); it hands its arguments to the running one and quits.
  		// The Mac sends the link to the running app itself.
  		SingleInstance: singleInstance(h),
@@ -20,7 +20,7 @@ index 7e82b60..f376976 100644
  		Description:    "one place to pick every agent's model",
  		Icon:           appIconFor(),
  		Assets:         application.AssetOptions{Handler: ownWindow(handler)},
-@@ -485,14 +485,14 @@ func Run(version string, showMain bool, link string) error {
+@@ -492,14 +492,14 @@ func Run(version string, showMain bool, link string) error {
  	}
  	var appQuit *application.MenuItem // the Mac's app menu's Quit
  	// Wails' default Learn More replaces the current window with wails.io.
@@ -39,7 +39,7 @@ index 7e82b60..f376976 100644
  		// Command-Q asks first while agents are connected (quitask.go). The
  		// role's item sends terminate:, which logging out and shutting down
  		// send too, so it is replaced rather than the app's ShouldQuit set
-@@ -619,10 +619,10 @@ func Run(version string, showMain bool, link string) error {
+@@ -638,10 +638,10 @@ func Run(version string, showMain bool, link string) error {
  	if runtime.GOOS == "linux" {
  		// set before the tray starts, it is the item's id too, which
  		// Omarchy's bar pins it by (Wails calls it "Wails" otherwise)
@@ -52,16 +52,16 @@ index 7e82b60..f376976 100644
  	if icon, template := trayIconFor(runtime.GOOS, traySchemeLight()); template {
  		h.tray.SetTemplateIcon(icon)
  	} else {
-@@ -782,7 +782,7 @@ func singleInstance(h *host) *application.SingleInstanceOptions {
- 	}
+@@ -832,7 +832,7 @@ func singleInstance(h *host) *application.SingleInstanceOptions {
+ // instanceID is the single instance's id, the config dir's.
+ func instanceID() string {
  	sum := sha256.Sum256([]byte(settings.Dir()))
- 	return &application.SingleInstanceOptions{
--		UniqueID: "ai.usemagpie.app.i" + hex.EncodeToString(sum[:6]),
-+		UniqueID: "ai.usekestrel.app.i" + hex.EncodeToString(sum[:6]),
- 		OnSecondInstanceLaunch: func(d application.SecondInstanceData) {
- 			args := d.Args
- 			if len(args) > 0 {
-@@ -853,7 +853,7 @@ func (h *host) setBird(b []byte) {
+-	return "ai.usemagpie.app.i" + hex.EncodeToString(sum[:6])
++	return "ai.usekestrel.app.i" + hex.EncodeToString(sum[:6])
+ }
+ 
+ // flap plays trayFlap on the tray icon, a frame every 30ms as they were
+@@ -883,7 +883,7 @@ func (h *host) setBird(b []byte) {
  func panelOptions(goos, theme string) application.WebviewWindowOptions {
  	o := application.WebviewWindowOptions{
  		Name:            "panel",

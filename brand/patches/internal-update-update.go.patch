@@ -1,5 +1,5 @@
 diff --git a/internal/update/update.go b/internal/update/update.go
-index ed350d3fe..905d62270 100644
+index c36fa3296..52d1d0034 100644
 --- a/internal/update/update.go
 +++ b/internal/update/update.go
 @@ -1,12 +1,25 @@
@@ -93,13 +93,13 @@ index ed350d3fe..905d62270 100644
  }
  
  // Release is one published version.
-@@ -141,6 +188,9 @@ func LatestEvery(ctx context.Context, lang string) (*Release, error) {
+@@ -159,6 +206,9 @@ func LatestStable(ctx context.Context) (*Release, error) {
  }
  
  func latestAt(ctx context.Context, feed, lang string) (*Release, error) {
 +	if strings.TrimSpace(feed) == "" {
 +		return nil, ErrNoFeed
 +	}
- 	if !fallsBack(ctx) {
- 		return latestFrom(ctx, feed, lang)
+ 	if githubOnly() {
+ 		return githubLatest(ctx, lang)
  	}

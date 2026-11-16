@@ -1,17 +1,17 @@
 diff --git a/internal/gui/assets/index.html b/internal/gui/assets/index.html
-index 0d5f08e..2eb56ef 100644
+index d1fcdad99..693aceb01 100644
 --- a/internal/gui/assets/index.html
 +++ b/internal/gui/assets/index.html
-@@ -3,7 +3,7 @@
- <head>
- <meta charset="utf-8">
- <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+@@ -7,7 +7,7 @@
+      repaints light pages dark (Chrome's Auto Dark Theme, Safari's Adaptive
+      Dark Mode) leaves it alone (xjp on X); app.css says the same -->
+ <meta name="color-scheme" content="light dark">
 -<title>kestrel</title>
 +<title>Kestrel</title>
  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
  <!-- added to a phone's home screen, kestrel web opens as an app of its own,
       with no browser bars (ninja_s6114 on Discord); webGuard serves these
-@@ -59,8 +59,8 @@
+@@ -63,8 +63,8 @@
      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect class="st-pane" x="2.5" y="3.5" width="4" height="9" rx="1"/><g fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2.25"/><path d="M6.75 2.75v10.5"/></g></svg>
    </button>
    <div class="brand">
