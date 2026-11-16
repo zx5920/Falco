@@ -6,10 +6,18 @@
 (() => {
   "use strict";
 
-  const zh = (window.bootPrefs?.lang || document.documentElement.lang || navigator.language || "")
-    .toLowerCase().startsWith("zh");
+  // The language i18n.js settled on: Settings › Language, else the system
+  // (setLocale in i18n.js maps a "system" preference to navigator.language).
+  // license.js loads after i18n.js and app.js, so its `locale` is already
+  // right; bootPrefs.lang alone would read "system" and leave the page in
+  // English on a Chinese system.
+  function speaksChinese() {
+    let lang = typeof locale === "string" ? locale : "";
+    lang = lang || document.documentElement.lang || navigator.language || "";
+    return String(lang).toLowerCase().startsWith("zh");
+  }
 
-  const S = zh ? {
+  const ZH = {
     license: "授权",
     trial: "试用中",
     trialDays: "剩余 {n} 天",
@@ -23,6 +31,7 @@
     machine: "机器码",
     copy: "复制",
     copied: "已复制",
+    brandSub: "激活",
     gateTrialTitle: "试用已结束",
     gateLicenseTitle: "激活码已失效",
     gateTrialSub: "输入这台机器的激活码，即可继续使用 Kestrel。",
@@ -45,7 +54,8 @@
     banner: "试用剩余 {n} 天",
     bannerAct: "立即激活",
     bannerMachine: "机器码",
-  } : {
+  };
+  const EN = {
     license: "License",
     trial: "Trial",
     trialDays: "{n} days left",
@@ -59,6 +69,7 @@
     machine: "Machine code",
     copy: "Copy",
     copied: "Copied",
+    brandSub: "Activation",
     gateTrialTitle: "Your trial has ended",
     gateLicenseTitle: "Your activation has expired",
     gateTrialSub: "Enter the activation code for this machine to keep using Kestrel.",
@@ -82,6 +93,7 @@
     bannerAct: "Activate now",
     bannerMachine: "Machine code",
   };
+  let S = speaksChinese() ? ZH : EN;
 
   let state = null;
   let gate = null;
@@ -202,7 +214,7 @@ body.kl-gated { overflow: hidden; }
   function top(withClose) {
     const t = h("div", "kl-top");
     const brand = h("div", "kl-brand");
-    brand.append(h("b", "", "Kestrel"), h("span", "", "Activation"));
+    brand.append(h("b", "", "Kestrel"), h("span", "", S.brandSub));
     t.append(mark(), brand);
     if (withClose) {
       const x = h("button", "icon kl-close", "×");
@@ -528,6 +540,21 @@ body.kl-gated { overflow: hidden; }
     }
     paint();
   }
+
+  // Settings › Language redraws the page in place (app.js applyPrefs), and
+  // setLocale writes the new tag on <html>: follow it here too, so the About
+  // row and the reminder speak the language now picked, not the one at load.
+  new MutationObserver(() => {
+    const was = S;
+    S = speaksChinese() ? ZH : EN;
+    if (S === was || !state) return;
+    const asking = !!dialog;
+    hideGate();
+    closeDialog();
+    hideBanner();
+    paint();
+    if (asking) openDialog();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
 
   watchAbout();
   refresh();
