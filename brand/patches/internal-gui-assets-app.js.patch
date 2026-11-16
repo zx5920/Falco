@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/app.js b/internal/gui/assets/app.js
-index 4567b5cae..ef0be6b49 100644
+index 4567b5cae..1eda4d677 100644
 --- a/internal/gui/assets/app.js
 +++ b/internal/gui/assets/app.js
 @@ -4578,7 +4578,9 @@ function updateStuck(u) {
@@ -22,6 +22,15 @@ index 4567b5cae..ef0be6b49 100644
        u.className = "icon-url";
        u.setAttribute("aria-label", t("Image URL"));
        u.onkeydown = (e) => {
+@@ -8689,7 +8691,7 @@ function skelWatch() {
+     if (!skelFlying && !document.querySelector(SKEL)) return (skelSince = 0, clearInterval(skelTick), skelTick = 0, skelWatch());
+     if (skelFlying || document.hidden || calm()) return (skelSince = 0);
+     if (!skelSince) return (skelSince = Date.now());
+-    if (Date.now() - skelSince >= 450 && skelSeen().length) skelBird();
++    // the loading bird is not shown: nothing hops on the skeleton rows
+   }, 250);
+ }
+ skelWatch();
 @@ -20002,7 +20004,7 @@ function renderCLI(r) {
  }
  
@@ -89,18 +98,16 @@ index 4567b5cae..ef0be6b49 100644
  }
  
  function renderSettings() {
-@@ -20256,34 +20271,11 @@ function renderSettings() {
+@@ -20256,34 +20271,9 @@ function renderSettings() {
      const who = self.pubWho?.(s) || t("Public address");
      row(who, t("KESTREL_PUBLIC_URL: where other computers reach the gateway, with a gateway key"), s.publicURL, copyBtn(s.publicURL, who)).id = "publicURLRow";
    }
 -  const site = el("button", "text", t("Open"));
 -  site.onclick = () => api("open", { url: "https://usemagpie.ai" }).catch(() => {});
 -  row(t("Website"), t("downloads, docs and what's new"), "usemagpie.ai", site);
-+  // No external entry point is shown: no website, community, Discord or
-+  // repository link. The licenses stay, in a sheet of their own.
-   const lic = el("button", "text", t("View"));
-   lic.onclick = showNotices;
-   row(t("Open-source licenses"), t("the notices of the code and data kestrel is built with"), "", lic);
+-  const lic = el("button", "text", t("View"));
+-  lic.onclick = showNotices;
+-  row(t("Open-source licenses"), t("the notices of the code and data kestrel is built with"), "", lic);
 -  const join = el("button", "discord");
 -  join.innerHTML = DISCORD_SVG;
 -  join.append(el("span", "", t("Join Discord")));
@@ -123,10 +130,13 @@ index 4567b5cae..ef0be6b49 100644
 -    api("open", { url: f.url }).catch(statusErr);
 -  };
 -  row(t("Report a problem"), "", "", report);
++  // No external entry point is shown: no website, community, Discord or
++  // repository link, and no licenses sheet. The licence and notices travel
++  // with the release's files instead.
    // kestrel uninstall, from the app (Jevik_AI on X deleted kestrel's folders
    // by hand and Codex kept pointing at a gateway that was gone). Never in a
    // browser: kestrel web would be taken off the computer serving the page.
-@@ -21031,9 +21023,8 @@ function renderGitHubToken(s) {
+@@ -21031,9 +21021,8 @@ function renderGitHubToken(s) {
    save.onclick = () => { const v = i.value.trim(); if (!v) return i.focus(); set(v); };
    i.oninput = () => { githubTokenDraft = i.value; };
    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter") save.onclick(); };
@@ -138,7 +148,7 @@ index 4567b5cae..ef0be6b49 100644
  }
  
  // warmTimes is a daily warm-up's times of day as settings keep them: the
-@@ -22041,7 +22032,7 @@ function renderRedact(s, keep) {
+@@ -22041,7 +22030,7 @@ function renderRedact(s, keep) {
      }, settingsErr))).id = "agentTelemetryAllRow";
    rowIn(share, t("Count me as a user"), t("Once a day, a random id for this computer with kestrel's version and system"),
      onOff(!s.noStats, (on) => savePrefs({ ...keep, noStats: !on })));

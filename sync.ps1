@@ -253,7 +253,10 @@ try {
 			return
 		}
 		Step "publish $tag"
-		& gh release create $tag $exe $feedPath --repo $repoSlug --title "Kestrel $Version" --notes $notes
+		# the licence and notices go up beside the binary: the app shows no
+		# licences sheet, and MIT's notice must travel with the copies
+		$legal = @("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES") | ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path $_ }
+		& gh release create $tag $exe $feedPath @legal --repo $repoSlug --title "Kestrel $Version" --notes $notes
 		if ($LASTEXITCODE -ne 0) { Fail "gh release create failed" }
 		Write-Host "published: $pageUrl"
 	}

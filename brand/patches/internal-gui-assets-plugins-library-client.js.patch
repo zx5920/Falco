@@ -1,0 +1,14 @@
+diff --git a/internal/gui/assets/plugins/library/client.js b/internal/gui/assets/plugins/library/client.js
+index 9cecdcb06..9e30a2a6f 100644
+--- a/internal/gui/assets/plugins/library/client.js
++++ b/internal/gui/assets/plugins/library/client.js
+@@ -8605,6 +8605,9 @@ kestrel.plugin("library", (ctx) => {
+   // A real picture: the project's own logo or its owner's, through kestrel so
+   // it's cached; its initial on a tile when there's none.
+   function logo(url, name) {
++    // an icon that names the project kestrel was built from is drawn as
++    // kestrel's own mark instead; the URL itself is untouched
++    if (/magpie/i.test(url || "")) return agentIcon("kestrel");
+     const box = el("span", "mk-icon");
+     const fallback = () => { box.replaceChildren(el("span", "mk-mono", (name || "?").replace(/^[^a-z0-9]+/i, "").charAt(0).toUpperCase() || "?")); box.classList.add("mono"); };
+     if (!url) { fallback(); return box; }
