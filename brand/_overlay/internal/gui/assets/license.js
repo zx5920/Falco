@@ -6,6 +6,10 @@
 (() => {
   "use strict";
 
+  // the tray panel (?mode=panel) is a glance at usage in a small popover, not
+  // a window of its own: its page must not draw over the cards
+  const panel = new URLSearchParams(location.search).get("mode") === "panel";
+
   // The language i18n.js settled on: Settings › Language, else the system
   // (setLocale in i18n.js maps a "system" preference to navigator.language).
   // license.js loads after i18n.js and app.js, so its `locale` is already
@@ -520,6 +524,13 @@ body.kl-gated { overflow: hidden; }
 
   function paint() {
     if (!state) return;
+    if (panel) {
+      // the reminder and the gate belong to the window: drawn over the tray
+      // panel they cover the cards it was opened for
+      hideGate();
+      hideBanner();
+      return;
+    }
     if (state.status === "expired") {
       closeDialog();
       hideBanner();
@@ -555,6 +566,12 @@ body.kl-gated { overflow: hidden; }
     paint();
     if (asking) openDialog();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+
+  // The panel keeps its page while hidden and WebView2 holds its timers
+  // meanwhile: ask again whenever the window is shown, so an activation made
+  // in the window shows here at once and no stale trial is drawn.
+  addEventListener("focus", refresh);
+  addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 
   watchAbout();
   refresh();
