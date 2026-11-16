@@ -174,6 +174,8 @@
 .kl-banner button { border: 0; border-radius: 999px; padding: 5px 11px; background: var(--accent); color: var(--accent-fg);
   font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
 .kl-banner .kl-x { padding: 4px 7px; background: transparent; color: var(--muted); }
+.kl-banner .kl-code-btn { padding: 5px 9px; background: transparent; color: var(--fg-2); font-weight: 550; }
+.kl-banner .kl-code-btn:hover { background: var(--pill); }
 .kl-toast { position: fixed; left: 50%; bottom: 26px; z-index: 2147483001; transform: translateX(-50%);
   padding: 9px 16px; border-radius: 10px; background: var(--fg); color: var(--bg); font-size: 12.5px; font-weight: 550;
   box-shadow: var(--shadow); animation: kl-in .2s ease-out; }
@@ -477,7 +479,7 @@ body.kl-gated { overflow: hidden; }
     banner.setAttribute("role", "status");
     banner.append(h("b", "", "Kestrel"), document.createTextNode(S.banner.replace("{n}", state.daysLeft)));
     if (state.machine) {
-      const mc = h("button", "", S.bannerMachine);
+      const mc = h("button", "kl-code-btn", S.bannerMachine);
       mc.type = "button";
       mc.onclick = () => copyText(state.machine, mc);
       banner.append(mc);
