@@ -1,5 +1,5 @@
 diff --git a/internal/update/signed.go b/internal/update/signed.go
-index 7d4861e2e..eb561a772 100644
+index 4155fe7cf..33809d269 100644
 --- a/internal/update/signed.go
 +++ b/internal/update/signed.go
 @@ -6,7 +6,6 @@ import (

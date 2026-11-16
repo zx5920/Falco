@@ -1,8 +1,8 @@
 diff --git a/internal/gateway/gateway.go b/internal/gateway/gateway.go
-index e89a15a..236426f 100644
+index 896904893..456a312da 100644
 --- a/internal/gateway/gateway.go
 +++ b/internal/gateway/gateway.go
-@@ -993,11 +993,29 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
+@@ -1020,11 +1020,29 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
  // Handler routes the client APIs.
  func (s *Server) Handler() http.Handler {
  	mux := s.routes()

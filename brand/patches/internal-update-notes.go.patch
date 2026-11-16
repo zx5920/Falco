@@ -1,5 +1,5 @@
 diff --git a/internal/update/notes.go b/internal/update/notes.go
-index a42a8c2..3ea2869 100644
+index d0552fbf0..4b613b295 100644
 --- a/internal/update/notes.go
 +++ b/internal/update/notes.go
 @@ -25,19 +25,33 @@ type Note struct {

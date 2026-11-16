@@ -1,8 +1,8 @@
 diff --git a/internal/mcpauth/mcpauth.go b/internal/mcpauth/mcpauth.go
-index e6cca60..efdb15a 100644
+index 9a577e363..91775c2a1 100644
 --- a/internal/mcpauth/mcpauth.go
 +++ b/internal/mcpauth/mcpauth.go
-@@ -881,7 +881,6 @@ func register(ctx context.Context, m meta, redirect string) (id, secret, method
+@@ -893,7 +893,6 @@ func register(ctx context.Context, m meta, redirect string) (id, secret, method
  	}
  	reg := map[string]any{
  		"client_name":                "Kestrel",

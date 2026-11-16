@@ -1,5 +1,5 @@
 diff --git a/internal/access/access.go b/internal/access/access.go
-index 393a326..2a9d8be 100644
+index f308b78e5..3c13ee4ce 100644
 --- a/internal/access/access.go
 +++ b/internal/access/access.go
 @@ -26,8 +26,16 @@ import (

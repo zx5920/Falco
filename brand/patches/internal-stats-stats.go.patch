@@ -1,5 +1,5 @@
 diff --git a/internal/stats/stats.go b/internal/stats/stats.go
-index 5866150..5fe591b 100644
+index 07752f51e..9b2611062 100644
 --- a/internal/stats/stats.go
 +++ b/internal/stats/stats.go
 @@ -29,9 +29,11 @@ import (

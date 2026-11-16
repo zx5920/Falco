@@ -1,5 +1,5 @@
 diff --git a/internal/shortcut/shortcut_windows.go b/internal/shortcut/shortcut_windows.go
-index 8bee713..0d0c465 100644
+index 8bee7134f..0d0c46544 100644
 --- a/internal/shortcut/shortcut_windows.go
 +++ b/internal/shortcut/shortcut_windows.go
 @@ -51,7 +51,7 @@ func registerUninstall(exe string) {

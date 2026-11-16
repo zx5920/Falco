@@ -1,5 +1,5 @@
 diff --git a/internal/stats/plugins.go b/internal/stats/plugins.go
-index da0de8f..8a6acbc 100644
+index da0de8f51..8a6acbc27 100644
 --- a/internal/stats/plugins.go
 +++ b/internal/stats/plugins.go
 @@ -23,12 +23,13 @@ import (

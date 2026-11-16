@@ -1,5 +1,5 @@
 diff --git a/internal/agent/legacy.go b/internal/agent/legacy.go
-index 282b738a..ee0c0eb2 100644
+index 282b738aa..ee0c0eb26 100644
 --- a/internal/agent/legacy.go
 +++ b/internal/agent/legacy.go
 @@ -1,6 +1,7 @@

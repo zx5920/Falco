@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/whatsnew.js b/internal/gui/assets/whatsnew.js
-index 57606c4..c27a6d5 100644
+index 57606c4ed..c27a6d58f 100644
 --- a/internal/gui/assets/whatsnew.js
 +++ b/internal/gui/assets/whatsnew.js
 @@ -177,7 +177,8 @@ function inlineMD(e, s) {

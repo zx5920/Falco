@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/plugins.js b/internal/gui/assets/plugins.js
-index 3b0b166d4..79d2a8f8d 100644
+index 575a95245..f79e65958 100644
 --- a/internal/gui/assets/plugins.js
 +++ b/internal/gui/assets/plugins.js
 @@ -31,6 +31,23 @@
@@ -34,7 +34,7 @@ index 3b0b166d4..79d2a8f8d 100644
      c.onclick = () => detail(l);
      c.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); detail(l); } };
      return c;
-@@ -682,7 +700,7 @@
+@@ -692,7 +710,7 @@
      if (l.community) {
        const v = el("span", "pm-verified");
        v.append(glyph(SHIELD, 11, 1.5), el("span", "", t("kestrel community")));
@@ -43,7 +43,7 @@ index 3b0b166d4..79d2a8f8d 100644
        by.append(v);
        return by;
      }
-@@ -1007,6 +1025,9 @@
+@@ -1026,6 +1044,9 @@
  
    function drawBody() {
      if (!body) return;
@@ -53,7 +53,7 @@ index 3b0b166d4..79d2a8f8d 100644
      const key = tab + (query ? ":q" : "");
      body.classList.toggle("enter", shown !== key);
      shown = key;
-@@ -1078,13 +1099,8 @@
+@@ -1097,13 +1118,8 @@
      const box = el("div", "pm-foot");
      const trust = el("p", "pm-trust");
      trust.append(glyph(SHIELD, 12, 1.5), el("span", "", t("A plugin is someone else's code with your sign-in or your requests: install the ones you trust.")));
@@ -69,7 +69,7 @@ index 3b0b166d4..79d2a8f8d 100644
      return box;
    }
  
-@@ -1812,18 +1828,8 @@
+@@ -1837,18 +1853,8 @@
      if (l.providers?.length) fact(t("Signs in to"), l.providers.join(t(", ")));
      main.append(facts);
      const links = el("div", "pm-links");
@@ -90,7 +90,7 @@ index 3b0b166d4..79d2a8f8d 100644
      const like = local ? null : window.pmCounts?.like(l.package, () => { const e = entryOf(l.package); return !!e && !e.off; });
      if (like) links.append(like);
      main.append(links);
-@@ -1838,6 +1844,10 @@
+@@ -1863,6 +1869,10 @@
      }
      if (l.replaces) main.append(el("p", "pm-note", t("kestrel's own sign-in to this subscription is deprecated: this plugin takes its place, and accounts signed in there move to it.")));
      const readme = el("div", "pm-readme");
@@ -101,7 +101,7 @@ index 3b0b166d4..79d2a8f8d 100644
      const pageKey = l.package + "\n" + (document.documentElement.lang || "en");
      const had = pages.get(pageKey);
      const day = (p) => {
-@@ -1858,6 +1868,7 @@
+@@ -1883,6 +1893,7 @@
      // outside Providers (#3779)
      confirmAsk = ed;
      openModal(ed);

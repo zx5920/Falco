@@ -1,9 +1,9 @@
 diff --git a/internal/settings/settings.go b/internal/settings/settings.go
-index 0bb6d72c3..39367907a 100644
+index 41c6161a5..6d6ef4ff4 100644
 --- a/internal/settings/settings.go
 +++ b/internal/settings/settings.go
-@@ -549,6 +549,11 @@ type Settings struct {
- 	// the update feed's ?channel=stable (ssharpcc on X). Settings' Update
+@@ -607,6 +607,11 @@ type Settings struct {
+ 	// one at once, from ?channel=daily (fishmagic80 on X). Settings' Update
  	// channel and kestrel update channel set it.
  	UpdateChannel string `json:"updateChannel,omitempty"`
 +	// UpdateFeed is where this build's update JSON is read, over the

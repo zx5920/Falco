@@ -1,8 +1,8 @@
 diff --git a/internal/cli/update_cli.go b/internal/cli/update_cli.go
-index 95eccd8ce..b532f0003 100644
+index 969f55257..ad709f8a1 100644
 --- a/internal/cli/update_cli.go
 +++ b/internal/cli/update_cli.go
-@@ -235,11 +235,11 @@ func updateCmd(args []string) error {
+@@ -242,11 +242,11 @@ func updateCmd(args []string) error {
  		return nil
  	}
  	if !update.Released(version) {

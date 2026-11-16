@@ -1,5 +1,5 @@
 diff --git a/build/windows/winres.json b/build/windows/winres.json
-index 7a2ff3b..83da181 100644
+index 7a2ff3b20..83da181da 100644
 --- a/build/windows/winres.json
 +++ b/build/windows/winres.json
 @@ -7,8 +7,8 @@

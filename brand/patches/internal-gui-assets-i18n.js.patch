@@ -1,8 +1,8 @@
 diff --git a/internal/gui/assets/i18n.js b/internal/gui/assets/i18n.js
-index fe42e49..170019c 100644
+index 2cad12479..988fb30b2 100644
 --- a/internal/gui/assets/i18n.js
 +++ b/internal/gui/assets/i18n.js
-@@ -20673,10 +20673,21 @@ function dateFmt(opts) {
+@@ -21565,10 +21565,21 @@ function dateFmt(opts) {
    return f;
  }
  
@@ -25,7 +25,7 @@ index fe42e49..170019c 100644
  }
  
  // tNotice is an agent's advice after a change (state.notice) in the
-@@ -20687,8 +20698,8 @@ function t(s, vars) {
+@@ -21579,8 +21590,8 @@ function t(s, vars) {
  // advice) reads as given.
  let noticeRes;
  function tNotice(s) {
@@ -36,7 +36,7 @@ index fe42e49..170019c 100644
    noticeRes ??= NOTICES.map((en) => {
      const parts = en.split(/\{(\w+)\}/), names = [];
      let re = "";
-@@ -20708,7 +20719,7 @@ function tNotice(s) {
+@@ -21600,7 +21611,7 @@ function tNotice(s) {
        const m = n.re.exec(rest);
        if (m && (!hit || m[0].length > hit.m[0].length || (m[0].length === hit.m[0].length && n.fixed > hit.n.fixed))) hit = { n, m };
      }

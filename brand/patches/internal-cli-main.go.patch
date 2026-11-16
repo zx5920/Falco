@@ -1,8 +1,8 @@
 diff --git a/internal/cli/main.go b/internal/cli/main.go
-index 6d24d057..a9cb8dcb 100644
+index ac9c15896..48249fd04 100644
 --- a/internal/cli/main.go
 +++ b/internal/cli/main.go
-@@ -285,6 +285,9 @@ var startUp = func() {
+@@ -289,6 +289,9 @@ var startUp = func() {
  	// started by an update, the kestrel it replaces goes first: the moves
  	// below write the files it may still be writing
  	update.AwaitPredecessor()
@@ -12,7 +12,7 @@ index 6d24d057..a9cb8dcb 100644
  	makeDirs()
  	settings.Migrate()
  	// every built-in plugin starts on (plugins.yml), on a new install too
-@@ -303,6 +306,8 @@ var startUp = func() {
+@@ -307,6 +310,8 @@ var startUp = func() {
  	// the moves below look at (a write among them reads them again)
  	release := provider.Hold()
  	agent.RenameLegacy()
