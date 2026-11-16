@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/index.html b/internal/gui/assets/index.html
-index d1fcdad99..693aceb01 100644
+index d1fcdad99..af11c3c95 100644
 --- a/internal/gui/assets/index.html
 +++ b/internal/gui/assets/index.html
 @@ -7,7 +7,7 @@
@@ -22,3 +22,14 @@ index d1fcdad99..693aceb01 100644
    </div>
    <h1 class="sr-only" id="pageTitle" data-t>Agents</h1>
    <!-- back to the page a link into a setting came from (app.js jumpFrom) -->
+@@ -206,10 +206,6 @@
+         <div class="who"><div class="name" data-t>Reduce motion</div></div>
+         <div id="reduceMotionSegs"></div>
+       </div>
+-      <div class="row pref" id="birdRow">
+-        <div class="who"><div class="name" data-t>Loading bird</div></div>
+-        <div id="birdSegs"></div>
+-      </div>
+       <div class="row pref">
+         <div class="who"><div class="name" data-t>Language</div></div>
+         <button type="button" id="langPick" class="sess-pick pref-pick" aria-label="Language" aria-haspopup="menu" aria-expanded="false"></button>

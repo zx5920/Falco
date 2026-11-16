@@ -1,5 +1,5 @@
 diff --git a/internal/gui/assets/app.js b/internal/gui/assets/app.js
-index 4567b5cae..1eda4d677 100644
+index 4567b5cae..6993b7db6 100644
 --- a/internal/gui/assets/app.js
 +++ b/internal/gui/assets/app.js
 @@ -4578,7 +4578,9 @@ function updateStuck(u) {
@@ -22,15 +22,6 @@ index 4567b5cae..1eda4d677 100644
        u.className = "icon-url";
        u.setAttribute("aria-label", t("Image URL"));
        u.onkeydown = (e) => {
-@@ -8689,7 +8691,7 @@ function skelWatch() {
-     if (!skelFlying && !document.querySelector(SKEL)) return (skelSince = 0, clearInterval(skelTick), skelTick = 0, skelWatch());
-     if (skelFlying || document.hidden || calm()) return (skelSince = 0);
-     if (!skelSince) return (skelSince = Date.now());
--    if (Date.now() - skelSince >= 450 && skelSeen().length) skelBird();
-+    // the loading bird is not shown: nothing hops on the skeleton rows
-   }, 250);
- }
- skelWatch();
 @@ -20002,7 +20004,7 @@ function renderCLI(r) {
  }
  
