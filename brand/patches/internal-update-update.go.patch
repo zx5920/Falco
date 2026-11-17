@@ -1,5 +1,5 @@
 diff --git a/internal/update/update.go b/internal/update/update.go
-index c36fa3296..52d1d0034 100644
+index 5ed11312e..481c58236 100644
 --- a/internal/update/update.go
 +++ b/internal/update/update.go
 @@ -1,12 +1,25 @@
@@ -36,8 +36,8 @@ index c36fa3296..52d1d0034 100644
  package update
  
  import (
-@@ -40,16 +53,50 @@ import (
- 	"github.com/kestrel-app/kestrel/internal/source"
+@@ -41,16 +54,50 @@ import (
+ 	"github.com/kestrel-app/kestrel/internal/winarm"
  )
  
 -// Site is kestrel's home; its /api/latest is the update feed.
@@ -93,7 +93,7 @@ index c36fa3296..52d1d0034 100644
  }
  
  // Release is one published version.
-@@ -159,6 +206,9 @@ func LatestStable(ctx context.Context) (*Release, error) {
+@@ -160,6 +207,9 @@ func LatestStable(ctx context.Context) (*Release, error) {
  }
  
  func latestAt(ctx context.Context, feed, lang string) (*Release, error) {
