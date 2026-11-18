@@ -1,0 +1,46 @@
+diff --git a/internal/gui/assets/updatesource.js b/internal/gui/assets/updatesource.js
+index bb0629126..2a7a3f26d 100644
+--- a/internal/gui/assets/updatesource.js
++++ b/internal/gui/assets/updatesource.js
+@@ -1,8 +1,8 @@
+ // Settings › About's Update source (RootSir and Sakugar_ on X): where an
+ // update is read and downloaded from, one menu button as the language's is.
+ // app.js imports this when the page is drawn, so it weighs nothing on the
+-// core. "" is automatic; site never goes to GitHub, github never to
+-// usemagpie.ai.
++// core. "" is automatic; site never goes to the code host, github never to
++// the feed's site.
+ window.updateSourcePick = function updateSourcePick(s, keep) {
+   const names = { "": "Automatic", site: "usemagpie.ai only", github: "GitHub only" };
+   const b = $("#updateSourcePick");
+@@ -36,17 +36,13 @@ window.renderUpdateMirror = function (r, s) {
+   who.append(sub);
+   const m = s.updateMirror || "", from = s.updateSource;
+   // as Update source says: site never asks GitHub, so no mirror is used
+-  sub.textContent = mirrorErr || (from === "site" ? t("Update source is usemagpie.ai only: updates never come from GitHub, so no mirror is used")
+-    : from === "github" ? (m ? t("Update source is GitHub only: updates come through this mirror, each checked against the release's signed checksums") : t("Update source is GitHub only: updates come from GitHub; a mirror can stand in for it where it is slow"))
+-    : m ? t("Updates are downloaded from usemagpie.ai, and through this mirror when that fails, each checked against usemagpie.ai's checksum")
+-    : t("Updates are downloaded from usemagpie.ai, and from GitHub when that fails; a mirror can stand in for GitHub where it is slow"));
+-  // the docs' Mirrors page says which mirror and how (WeltAn_X on X)
+-  const more = el("button", "sub-more", t("How mirrors work"));
+-  more.onclick = () => api("open", { url: "https://usemagpie.ai/docs/" + ({ zh: "zh/", "zh-TW": "zh/", ja: "ja/" }[locale] || "") + "mirrors#settings" }).catch(() => {});
+-  sub.append(" ", more);
++  sub.textContent = mirrorErr || (from === "site" ? t("Update source is the feed only: updates never come from the code host, so no mirror is used")
++    : from === "github" ? (m ? t("Update source is the code host only: updates come through this mirror, each checked against the release's signed checksums") : t("Update source is the code host only: updates come from it; a mirror can stand in for it where it is slow"))
++    : m ? t("Updates come from the feed this build is pointed at, and through this mirror when that fails, each checked against the feed's checksum")
++    : t("Updates come from the feed this build is pointed at, and from its fallback when that fails; a mirror can stand in where the feed is slow"));
+   sub.classList.toggle("err", !!mirrorErr);
+   sub.title = from === "github" ? t("The checksums come signed with the release; a file from the mirror that doesn't match them is not installed.")
+-    : t("The update and its checksum always come from usemagpie.ai; a file from the mirror that doesn't match it is not installed.");
++    : t("The update and its checksum always come from the update feed; a file from the mirror that doesn't match it is not installed.");
+   if (mirrorEditing) return mirrorEdit(r, s, sub, val);
+   if (m) {
+     const official = el("button", "text", t("Remove mirror"));
+@@ -57,6 +53,6 @@ window.renderUpdateMirror = function (r, s) {
+   } else {
+     const add = el("button", "text", t("Use a mirror…"));
+     add.onclick = () => editMirror(r, s, "");
+-    val.append(el("code", "", from === "github" ? "github.com" : "usemagpie.ai"), add);
++    val.append(el("code", "", from === "github" ? "github.com" : "the update feed"), add);
+   }
+ };

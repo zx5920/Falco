@@ -1,9 +1,9 @@
 diff --git a/internal/stats/plugins.go b/internal/stats/plugins.go
-index da0de8f51..8a6acbc27 100644
+index b377ec43c..60c5835bb 100644
 --- a/internal/stats/plugins.go
 +++ b/internal/stats/plugins.go
-@@ -23,12 +23,13 @@ import (
- // own act, sent when they make it.
+@@ -27,12 +27,13 @@ import (
+ // the user's own act, sent when they make it.
  
  // Site takes the day's plugins and the likes; KESTREL_SITE_HOST points
 -// them elsewhere, for testing.
@@ -17,28 +17,28 @@ index da0de8f51..8a6acbc27 100644
 +	return strings.TrimRight(strings.TrimSpace(update.Site), "/")
  }
  
- // publicPlugins is plugin.Public; tests put their own.
-@@ -37,6 +38,9 @@ var publicPlugins = plugin.Public
- // sendPlugins tells usemagpie.ai the plugins installed here Discover
- // lists; nothing when there are none.
+ // publicPlugins is plugin.Public, and publicServers
+@@ -46,6 +47,9 @@ var (
+ // lists, and the Library's servers the market lists; nothing when there
+ // are none.
  func sendPlugins(ctx context.Context, id string) error {
 +	if Site() == "" {
 +		return nil
 +	}
- 	names := publicPlugins(ctx)
- 	if len(names) == 0 {
+ 	names, servers := publicPlugins(ctx), publicServers()
+ 	if len(names) == 0 && len(servers) == 0 {
  		return nil
-@@ -56,6 +60,9 @@ type Counts struct {
+@@ -82,6 +86,9 @@ type Board struct {
  
- // PluginCounts asks usemagpie.ai each plugin's counts, by Discover's key.
- func PluginCounts(ctx context.Context) (map[string]Counts, error) {
+ // PluginCounts asks usemagpie.ai each plugin's and each server's counts.
+ func PluginCounts(ctx context.Context) (Board, error) {
 +	if Site() == "" {
-+		return nil, nil
++		return Board{}, nil
 +	}
  	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
  	defer cancel()
  	req, err := http.NewRequestWithContext(ctx, "GET", Site()+"/api/plugins/stats", nil)
-@@ -98,6 +105,9 @@ func Like(ctx context.Context, name string, on bool) (int, error) {
+@@ -125,6 +132,9 @@ func Like(ctx context.Context, name string, on bool) (int, error) {
  }
  
  func post(ctx context.Context, path string, in any, out any) error {
