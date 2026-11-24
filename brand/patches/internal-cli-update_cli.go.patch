@@ -1,13 +1,17 @@
 diff --git a/internal/cli/update_cli.go b/internal/cli/update_cli.go
-index 969f55257..ad709f8a1 100644
+index a362b4c61..4e41217b8 100644
 --- a/internal/cli/update_cli.go
 +++ b/internal/cli/update_cli.go
-@@ -242,11 +242,11 @@ func updateCmd(args []string) error {
+@@ -249,7 +249,7 @@ func updateCmd(args []string) error {
  		return nil
  	}
  	if !update.Released(version) {
 -		return fmt.Errorf("this kestrel was built from source; update it the way you built it, or get the release from %s", update.Site)
 +		return fmt.Errorf("this kestrel was built from source; update it the way you built it, or get the release from %s", update.Home())
+ 	}
+ 	// a package manager's copy (Homebrew's, pacman's kestrel-bin from the
+ 	// AUR, a .deb's, an app or a binary in Nix's store): replaced under
+@@ -262,7 +262,7 @@ func updateCmd(args []string) error {
  	}
  	if app := update.Bundle(); app != "" {
  		if update.Stuck(app) != "" {
@@ -15,4 +19,4 @@ index 969f55257..ad709f8a1 100644
 +			return fmt.Errorf("%s can't be replaced where it is; move kestrel to Applications, or download the new version from %s", tilde(app), update.Home())
  		}
  		fmt.Println(muted.Render("  downloading " + update.AppAsset() + via(ctx) + " …"))
- 		staged, err := update.Stage(ctx, rel, app)
+ 		pctx, ended := withDownloadProgress(ctx)
