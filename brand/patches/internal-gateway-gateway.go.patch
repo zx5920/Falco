@@ -1,8 +1,8 @@
 diff --git a/internal/gateway/gateway.go b/internal/gateway/gateway.go
-index e8dea6fba..5286a9a49 100644
+index 628ca599e..b90c409c6 100644
 --- a/internal/gateway/gateway.go
 +++ b/internal/gateway/gateway.go
-@@ -1030,11 +1030,29 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
+@@ -1142,11 +1142,29 @@ func (s *Server) shutdownServer(srv *http.Server, c context.Context) {
  // Handler routes the client APIs.
  func (s *Server) Handler() http.Handler {
  	mux := s.routes()
@@ -12,8 +12,8 @@ index e8dea6fba..5286a9a49 100644
  	// on (dumpFirst)
  	// a socket's turns go through all of it again (socketEntry); the
  	// agent's Retry-After is bounded on the way out (retryCapped)
--	return socketEntry(s.dumpFirst(retryCapped(s.counted(headerLogged(holdCatalog(corsGuard(callerGuard(readOnlyGuard(mux, withCaller(keptBodyRequests(keyLimited(s.keySlots(mux, mux)))))))))))))
-+	h := socketEntry(s.dumpFirst(retryCapped(s.counted(headerLogged(holdCatalog(corsGuard(callerGuard(readOnlyGuard(mux, withCaller(keptBodyRequests(keyLimited(s.keySlots(mux, mux)))))))))))))
+-	return socketEntry(s.dumpFirst(retryCapped(s.counted(headerLogged(holdCatalog(corsGuard(callerGuard(readOnlyGuard(mux, keySurfaceGuard(mux, withCaller(keptBodyRequests(keyLimited(s.keySlots(mux, mux))))))))))))))
++	h := socketEntry(s.dumpFirst(retryCapped(s.counted(headerLogged(holdCatalog(corsGuard(callerGuard(readOnlyGuard(mux, keySurfaceGuard(mux, withCaller(keptBodyRequests(keyLimited(s.keySlots(mux, mux))))))))))))))
 +	return legacyPaths(h)
 +}
 +
