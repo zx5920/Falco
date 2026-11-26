@@ -16,7 +16,8 @@ import (
 // AstrLink Guard (QuantumNous/astrlink-guard, Apache-2.0) is the second
 // local model: a 37 MB int8 token classifier for Chinese and English,
 // run in magpie's own process by internal/pii/guard, on the CPU of every
-// system and through CoreML on a Mac, with nothing native to download. Its files are fetched from
+// system, through CoreML on a Mac, and through Level Zero on a Windows
+// Intel NPU, with nothing native to download. Its files are fetched from
 // Hugging Face at the revision their sha256 were pinned at (the
 // publisher's own listing), and are loaded on the first request that
 // needs them and let go after idleAfter with none.
@@ -138,6 +139,10 @@ type spanFinder interface {
 // backender is a model that says what reads it (guard.Model.Backend).
 type backender interface {
 	Backend() (via, device string, err error)
+}
+
+type npuHardware interface {
+	HasNPU() bool
 }
 
 // guardLoad reads the model; a var for tests.
@@ -330,6 +335,10 @@ type guardModel struct{}
 
 func (guardModel) ID() string { return AstrLinkGuard }
 
+func (guardModel) ManagesWeights() bool { return true }
+
+func (guardModel) Generation() string { return "" }
+
 func (guardModel) Supported() bool { return true }
 
 func (guardModel) Installed() bool { return guardInstalled() }
@@ -343,7 +352,7 @@ func (guardModel) Find(ctx context.Context, texts []string) ([][]redact.Found, e
 }
 
 func (guardModel) Now() Status {
-	s := Status{Model: AstrLinkGuard, Supported: true, Installed: guardInstalled(), Size: guardSize(), Rosetta: translated(), Emulated: emulated()}
+	s := Status{Model: AstrLinkGuard, ManagedWeights: true, Supported: true, Installed: guardInstalled(), Size: guardSize(), Rosetta: translated(), Emulated: emulated()}
 	gdl.fill(&s)
 	gsrv.mu.Lock()
 	if gsrv.m != nil {
@@ -353,6 +362,9 @@ func (guardModel) Now() Status {
 			if s.Via, s.Device, err = b.Backend(); err != nil {
 				s.GPUError = err.Error()
 			}
+		}
+		if n, ok := gsrv.m.(npuHardware); ok && n.HasNPU() {
+			s.NPU = true
 		}
 	}
 	s.Failed, s.Loading = gsrv.failed, gsrv.loading

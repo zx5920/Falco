@@ -103,6 +103,10 @@ type candidate struct {
 	// given a request for want of a slot (laneMate) nor kept on by a
 	// conversation (affine)
 	reserve int
+	// off is an account or key the user turned off, sent a request pinned
+	// to it (pinOff): its failure rests nothing, as a test sent to it
+	// writes nothing, and routing goes on leaving it out
+	off bool
 }
 
 // unmasked says a request to the try goes as written: its groups say so,
@@ -128,6 +132,9 @@ type capHold struct {
 	// unread: held by a careful provider as its usage can't be told, why
 	// (carefulDoubt), cap then the account's own
 	unread string
+	// turn: held short of cap, as a turn there is taken to spend this
+	// many points, and those come back no reading has yet (nearCapHeld)
+	turn float64
 	// spend: a key held at the spend cap set on it (provider.SpendCap),
 	// cap then 100 and used the share of it spent
 	spend *spendHold
@@ -1083,6 +1090,9 @@ func heldReasons(ws []Weighed, now time.Time) ([]string, time.Time) {
 			continue
 		}
 		s := fmt.Sprintf("%s (%s) is at %.0f%% of a usage window, past its %d%% cap", w.Name, w.Who, w.Used, w.Capped)
+		if w.CapTurn > 0 && w.Used < float64(w.Capped) {
+			s = fmt.Sprintf("%s (%s) is at %.0f%% of a usage window, and its next turn would take it past its %d%% cap: a turn there has spent up to %s points", w.Name, w.Who, w.Used, w.Capped, amountText(w.CapTurn))
+		}
 		if w.CapAmount > 0 {
 			s = fmt.Sprintf("%s (%s) has used %s %s of a usage window, past its cap of %s", w.Name, w.Who, amountText(w.CapCount), w.CapUnit, amountText(w.CapAmount))
 		}
@@ -1284,7 +1294,7 @@ func barredOf(cs []candidate, q provider.Provider, fallback bool, from provider.
 		w := weighed(c, q, weighing{}, fallback, from)
 		w.Unlisted, w.Via = true, via
 		if h := c.capped; h != nil {
-			w.Capped, w.Used, w.NoCredits, w.ExtraUsage, w.Unread = h.cap, h.used, h.noCredits, h.extra, h.unread
+			w.Capped, w.Used, w.NoCredits, w.ExtraUsage, w.Unread, w.CapTurn = h.cap, h.used, h.noCredits, h.extra, h.unread, h.turn
 			w.CapAmount, w.CapCount, w.CapUnit = h.amount, h.count, h.unit
 			if sp := h.spend; sp != nil {
 				w.SpendCap, w.Spent, w.SpendPeriod = sp.usd, sp.spent, sp.period
@@ -2169,12 +2179,25 @@ func retryable(status int, body []byte) bool {
 		return false
 	case status == 401, status == 402, status == 403, status == 404, status == 408, status == 429, status >= 500:
 		return true
+	case status == http.StatusUnavailableForLegalReasons:
+		// a 451, whatever its body says: the vendor won't serve this
+		// request's content, or not from here (legalRefused). Another
+		// member, another vendor or account, may (Winnie7572 on X: a
+		// group ended at its first member's 451, five ready ones unasked)
+		return true
 	case modelRetired(status, body):
 		// another provider of the model may still serve it
 		return true
 	case status >= 400 && provider.EdgeBlocked(body):
 		// the vendor's firewall blocked this address (Alibaba Cloud's 405
 		// in front of zcode.z.ai): another provider goes another way
+		return true
+	case restrictedSaid(status, body):
+		// magpie's own restricted-account hint (ZCode's 405 code 3012,
+		// WorkBuddy's 11140) on any 4xx: the account is restricted, so
+		// another provider in the group can still serve the request
+		// (#7774); riskRefused keeps sibling accounts of the same
+		// provider out
 		return true
 	case status >= 400 && status < 500 && failure(status, raw) == failCredit:
 		// out of credit, as failure reads it, whatever the status: another
@@ -2204,6 +2227,29 @@ func retryable(status int, body []byte) bool {
 			reasoningBackRefused(body)
 	}
 	return false
+}
+
+// legalRefused says a failure is HTTP 451, Unavailable For Legal Reasons,
+// with no word of the region it came from (regionRefused reads those):
+// the vendor turning the request's content away. It names no account
+// fault, and no vendor's body is needed for it: StepFun's
+// censorship_blocked (#5089) is one, and a 451 that says nothing at all
+// is another, which ended a group at its first member with the same
+// account answering the request a word changed (Winnie7572 on X). It is
+// a refusal of the request: the group's next member is asked, and nobody
+// rests (holdWriter.settle, restAfter).
+func legalRefused(status int, body []byte) bool {
+	return status == http.StatusUnavailableForLegalReasons && !regionRefused(status, wordsOf(body))
+}
+
+// legalNote is a 451's refusal note: its reason, and the vendor's words,
+// or the status's own when it said none.
+func legalNote(body []byte) string {
+	said := strings.TrimSpace(provider.APIError(body, http.StatusText(http.StatusUnavailableForLegalReasons)))
+	if len(said) > 1000 {
+		said = said[:1000] + "…"
+	}
+	return refusedNote("451") + " — " + said
 }
 
 // lateRests says whether a reply that broke off after it began, with this
@@ -3733,6 +3779,7 @@ func (h *holdWriter) errBody() []byte {
 // settle reads a reply held, once the try is over, for a refusal with
 // nothing said: a reply held whole, or an error status that is one.
 func (h *holdWriter) settle() {
+	defer h.settleLegal()
 	if h.passing || h.failure != 0 {
 		return
 	}
@@ -3782,6 +3829,22 @@ func (h *holdWriter) settle() {
 		// a translated reply that didn't stream does, for the next to
 		// answer
 		h.failure, h.failMsg = http.StatusBadGateway, didNotStream+": "+provider.APIError(h.held.Bytes(), "unexpected reply")
+	}
+}
+
+// settleLegal reads a try that failed with a 451 (legalRefused) as the
+// vendor refusing the request: its error status, a 200 carrying such an
+// error, or a stream's error event naming it, before any of it went to
+// the agent or once it was handed over. The refusal goes to the group's
+// next member, as policyRefusal's do (#248), and its account doesn't
+// rest: Winnie7572 on X had a group end at its first member's bare 451,
+// tries=1, while five members stood ready.
+func (h *holdWriter) settleLegal() {
+	if h.passing || h.refused || h.code() != http.StatusUnavailableForLegalReasons {
+		return
+	}
+	if body := h.errBody(); legalRefused(h.code(), body) {
+		h.failure, h.failMsg, h.refused = refusedStatus, legalNote(body), true
 	}
 }
 
@@ -5071,7 +5134,13 @@ func streamStatus(msg string) int {
 // that one. The error says why none is left: no such account, one that
 // doesn't list the model, or one resting. A name that isn't ASCII comes
 // percent-encoded (pinnedName), and matches as written or decoded.
-func pinTo(raw string, cands []candidate, pl planned) ([]candidate, planned, int, string) {
+//
+// One the user turned off is found too, when no account routing plans is
+// named (pinOff): it is sent the request alone, as Test on account…
+// sends one a test (tmr11235 on X: a plugin testing an account before it
+// is turned on). offOK is false for a caller held to limits (keyHolds,
+// accountHolds), which is told no rather than reaching it.
+func pinTo(raw string, cands []candidate, pl planned, from provider.Protocol, offOK bool) ([]candidate, planned, int, string) {
 	want := pinnedName(raw)
 	// by its stable id too, as AccountsPath lists it: "<provider>/<id>",
 	// or the id alone; a key so, whatever it is named
@@ -5113,6 +5182,16 @@ func pinTo(raw string, cands []candidate, pl planned) ([]candidate, planned, int
 		if match(w, nil) {
 			return nil, pl, http.StatusBadRequest, fmt.Sprintf("%s: %s's plan doesn't list %s", AccountHeader, w.Who, w.Model)
 		}
+	}
+	if c, w, found := pinOff(raw, want, targets, cands, pl, from); found {
+		switch {
+		case !offOK:
+			return nil, pl, http.StatusForbidden, fmt.Sprintf("%s: %s is turned off in magpie, and a gateway key held to limits doesn't send to an account that is off", AccountHeader, w.Who)
+		case w.Unlisted:
+			return nil, pl, http.StatusBadRequest, fmt.Sprintf("%s: %s's plan doesn't list %s", AccountHeader, w.Who, w.Model)
+		}
+		w.Unlisted = false
+		return []candidate{c}, planned{order: []Weighed{w}}, 0, ""
 	}
 	var have []string
 	for _, w := range append(slices.Clone(pl.order), pl.left...) {

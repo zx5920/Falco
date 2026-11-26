@@ -126,6 +126,11 @@ type Hub interface {
 	// gives: the switch turned off, the server removed or edited, here or
 	// by another magpie (the window, the CLI)
 	Prune()
+	// Met is told of an agent that connected to its own address from
+	// another computer (hubMeet): one magpie knows that isn't on this
+	// computer is recorded, and given the servers on the first time
+	// (library/remote_agents.go)
+	Met(agent string)
 }
 
 // HubServer is a server behind the hub as an agent is told of it: About
@@ -159,7 +164,8 @@ type HubServer struct {
 	// Program: the server is a program run on this computer, with the
 	// user's rights (a command, or a tools plugin), not an HTTP server
 	// elsewhere. A gateway key held to some models, accounts or a spend
-	// limit isn't given it from another computer.
+	// limit isn't given it from another computer; a key for MCP servers
+	// only, held to no model, is (hubVisitor).
 	Program bool
 	// Keyed: the server is Magpie Browser, whose browsers are each this
 	// computer's or a gateway key's (browser.go): given to this computer
@@ -219,7 +225,14 @@ func HubVisitorOf(ctx context.Context) HubVisitor {
 // hubVisitor is who r is from (HubVisitor).
 func hubVisitor(r *http.Request) HubVisitor {
 	away := !local(r) || hubFromPage(r)
-	v := HubVisitor{Away: away, Held: away && nativeHeld(access.Caller(r.Context()))}
+	held := access.Caller(r.Context())
+	if held.ModelsOff() {
+		// a key for MCP servers only (ifitscolorful on X) is held to no
+		// model, not to some: no limit of its models is there for a
+		// program to slip past, and its MCP list holds it to servers
+		held.Models = nil
+	}
+	v := HubVisitor{Away: away, Held: away && nativeHeld(held)}
 	if !local(r) && !hubFromPage(r) {
 		v.Key = access.Caller(r.Context()).KeyID
 		v.Memory = access.Caller(r.Context()).Memory
@@ -765,7 +778,24 @@ func hubServersFor(ctx context.Context, agent string) []HubServer {
 	return hubServersOf(ctx, agent)
 }
 
+// hubMeet tells the Library of an agent on another computer that
+// connected to its own address (Hub.Met): a magpie in Docker has none of
+// the agents that use its router (bitxeno303 on X: DeepSeek Harness on
+// their own computer had no tools at /mcp/magpie/hub/dsh), and nothing
+// could be ticked for one. A request from this computer, a web page's, or
+// another magpie's router is no agent of another computer's.
+func hubMeet(r *http.Request, agent string) {
+	if agent == "" || MCPHub == nil || local(r) || hubFromPage(r) || FromRouter(r.Context()) {
+		return
+	}
+	MCPHub.Met(HubAgentOf(agent))
+}
+
 func (s *Server) hubMCPCall(r *http.Request, agent string, m mcpMessage) (any, map[string]any) {
+	switch m.Method {
+	case "initialize", "tools/list":
+		hubMeet(r, agent)
+	}
 	switch m.Method {
 	case "initialize":
 		say := "The tools of the MCP servers in magpie's Library that are switched on for this agent, each named <server>__<tool>. Add servers, or switch them on for an agent, in magpie's Library → MCP."
@@ -813,6 +843,11 @@ func (s *Server) hubMCPCall(r *http.Request, agent string, m mcpMessage) (any, m
 			// hubTools ran, so each server's tools are as just listed
 			for _, t := range hubOnDemandSpecs(where, hubServersOf(r.Context(), agent)) {
 				list = append(list, t)
+			}
+			for _, t := range ts {
+				if hubAlwaysLoaded(t) {
+					list = append(list, hubSpecOf(t, where))
+				}
 			}
 		} else {
 			list = make([]any, 0, len(ts)+1)

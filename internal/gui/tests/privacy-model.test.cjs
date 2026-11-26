@@ -89,6 +89,18 @@ const pickWords = {
   de: { head: "Lokales Modell", note: "Chinesisch und Englisch, wenig Fehlalarme in Code · 39 MB" },
 };
 
+// a plugin's models (#6959): what one says while its plugin is off or its
+// files are gone
+const pluginWords = {
+  en: "Not available: its plugin is off, or its files are gone",
+  zh: "暂不可用：它的插件已关闭，或模型文件不在了",
+  "zh-TW": "暫不可用：它的外掛已關閉，或模型檔案不在了",
+  ja: "利用できません：プラグインがオフか、モデルのファイルがありません",
+  de: "Nicht verfügbar: Sein Plugin ist aus, oder seine Dateien fehlen",
+};
+const mine = { model: "external/plugin/0123456789abcdef/v1", name: "My detector", managedWeights: false, supported: true, installed: true };
+const gone = { model: "external/plugin/0123456789abcdef/v2", name: "Old detector", managedWeights: false, supported: true, installed: false };
+
 const scoreWords = {
   en: { name: "Confidence threshold", def: "Default (0.8)", most: "Masks the most" },
   zh: { name: "置信度阈值", def: "默认（0.8）", most: "遮得最多" },
@@ -103,14 +115,15 @@ const scoreWords = {
 // and a slow line with its fix under Rosetta and under Windows on Arm's
 // x64 emulation
 const runWords = {
-  en: { ne: "On, with CoreML on the Neural Engine", gpu: "On, with CoreML on the GPU", ml: "On, with CoreML", failed: "On, on the CPU: CoreML failed (prediction failed)", cpu: "On, on the CPU", rosetta: "On, slowly under Rosetta: the next update installs magpie for Apple silicon", emulated: "On, slowly under x64 emulation: the next update installs magpie for Arm" },
-  zh: { ne: "已开启，通过 CoreML 运行在神经网络引擎", gpu: "已开启，通过 CoreML 运行在 GPU", ml: "已开启，通过 CoreML 运行", failed: "已开启，运行在 CPU：CoreML 出错（prediction failed）", cpu: "已开启，运行在 CPU", rosetta: "已开启，但在 Rosetta 下运行较慢：下次更新会装上 Apple 芯片版 magpie", emulated: "已开启，但在 x64 转译下运行较慢：下次更新会装上 ARM 版 magpie" },
-  "zh-TW": { ne: "已開啟，透過 CoreML 執行於神經網路引擎", gpu: "已開啟，透過 CoreML 執行於 GPU", ml: "已開啟，透過 CoreML 執行", failed: "已開啟，執行於 CPU：CoreML 出錯（prediction failed）", cpu: "已開啟，執行於 CPU", rosetta: "已開啟，但在 Rosetta 下執行較慢：下次更新會裝上 Apple 晶片版 magpie", emulated: "已開啟，但在 x64 模擬下執行較慢：下次更新會裝上 ARM 版 magpie" },
-  ja: { ne: "オン、CoreML により Neural Engine で実行中", gpu: "オン、CoreML により GPU で実行中", ml: "オン、CoreML で実行中", failed: "オン、CPU で実行中：CoreML が失敗しました（prediction failed）", cpu: "オン、CPU で実行中", rosetta: "オン、Rosetta で動作中のため低速です。次のアップデートで Apple シリコン版の magpie が入ります", emulated: "オン、x64 エミュレーションで動作中のため低速です。次のアップデートで ARM 版の magpie が入ります" },
-  de: { ne: "An, mit CoreML auf der Neural Engine", gpu: "An, mit CoreML auf der GPU", ml: "An, mit CoreML", failed: "An, auf der CPU: CoreML ist ausgefallen (prediction failed)", cpu: "An, auf der CPU", rosetta: "An, unter Rosetta langsam: das nächste Update installiert magpie für Apple Silicon", emulated: "An, unter x64-Emulation langsam: das nächste Update installiert magpie für Arm" },
+  en: { ne: "On, with CoreML on the Neural Engine", gpu: "On, with CoreML on the GPU", ml: "On, with CoreML", npu: "On, on the NPU (Intel(R) AI Boost)", npuFailed: "On, on the CPU: the NPU failed (device lost)", failed: "On, on the CPU: CoreML failed (prediction failed)", cpu: "On, on the CPU", rosetta: "On, slowly under Rosetta: the next update installs magpie for Apple silicon", emulated: "On, slowly under x64 emulation: the next update installs magpie for Arm" },
+  zh: { ne: "已开启，通过 CoreML 运行在神经网络引擎", gpu: "已开启，通过 CoreML 运行在 GPU", ml: "已开启，通过 CoreML 运行", npu: "已开启，运行在 NPU（Intel(R) AI Boost）", npuFailed: "已开启，运行在 CPU：NPU 出错（device lost）", failed: "已开启，运行在 CPU：CoreML 出错（prediction failed）", cpu: "已开启，运行在 CPU", rosetta: "已开启，但在 Rosetta 下运行较慢：下次更新会装上 Apple 芯片版 magpie", emulated: "已开启，但在 x64 转译下运行较慢：下次更新会装上 ARM 版 magpie" },
+  "zh-TW": { ne: "已開啟，透過 CoreML 執行於神經網路引擎", gpu: "已開啟，透過 CoreML 執行於 GPU", ml: "已開啟，透過 CoreML 執行", npu: "已開啟，執行於 NPU（Intel(R) AI Boost）", npuFailed: "已開啟，執行於 CPU：NPU 出錯（device lost）", failed: "已開啟，執行於 CPU：CoreML 出錯（prediction failed）", cpu: "已開啟，執行於 CPU", rosetta: "已開啟，但在 Rosetta 下執行較慢：下次更新會裝上 Apple 晶片版 magpie", emulated: "已開啟，但在 x64 模擬下執行較慢：下次更新會裝上 ARM 版 magpie" },
+  ja: { ne: "オン、CoreML により Neural Engine で実行中", gpu: "オン、CoreML により GPU で実行中", ml: "オン、CoreML で実行中", npu: "オン、NPU で実行中（Intel(R) AI Boost）", npuFailed: "オン、CPU で実行中：NPU が失敗しました（device lost）", failed: "オン、CPU で実行中：CoreML が失敗しました（prediction failed）", cpu: "オン、CPU で実行中", rosetta: "オン、Rosetta で動作中のため低速です。次のアップデートで Apple シリコン版の magpie が入ります", emulated: "オン、x64 エミュレーションで動作中のため低速です。次のアップデートで ARM 版の magpie が入ります" },
+  de: { ne: "An, mit CoreML auf der Neural Engine", gpu: "An, mit CoreML auf der GPU", ml: "An, mit CoreML", npu: "An, auf der NPU (Intel(R) AI Boost)", npuFailed: "An, auf der CPU: die NPU ist ausgefallen (device lost)", failed: "An, auf der CPU: CoreML ist ausgefallen (prediction failed)", cpu: "An, auf der CPU", rosetta: "An, unter Rosetta langsam: das nächste Update installiert magpie für Apple Silicon", emulated: "An, unter x64-Emulation langsam: das nächste Update installiert magpie für Arm" },
 };
 const runs = {
   ne: { via: "CoreML", device: "Neural Engine" }, gpu: { via: "CoreML", device: "GPU" }, ml: { via: "CoreML" },
+  npu: { via: "Level Zero", device: "Intel(R) AI Boost" }, npuFailed: { device: "CPU", npu: true, gpuError: "device lost" },
   failed: { device: "CPU", gpuError: "prediction failed" }, cpu: { device: "CPU" },
   // the Intel build on Apple silicon (cdredfox on Discord: 150% of a core)
   rosetta: { device: "CPU", rosetta: true },
@@ -319,6 +332,58 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         assert.deepEqual(posts, ["pick astrlink-guard"]);
         assert.deepEqual(await page.evaluate(() => [scrollX, scrollY, document.querySelector("#view-settings").scrollTop]), before, "the pick moved nothing");
         assert.deepEqual(errors, []);
+      });
+    }
+  }
+
+  // a plugin's models are in the same menu by the names its options give
+  // (#6959), one whose plugin is off saying so; picked while unavailable,
+  // the row says why, keeps its switch and has nothing to delete
+  for (const lang of Object.keys(pluginWords)) {
+    for (const width of [1100, 640]) {
+      test(`${engine} ${lang} ${width}px: a plugin's models are picked by their names`, async (t) => {
+        const posts = [], model = { supported: true, installed: true, on: true, running: true, device: "CPU", size, managedWeights: true, others: [guard, mine, gone] };
+        const { browser, page, errors } = await open(engine, lang, width, true, model, posts);
+        t.after(() => browser.close());
+        const row = page.locator("#privacyModelRow");
+        await wheelTo(page, row, 300);
+        const pick = row.locator("button.pm-model");
+        await pick.waitFor();
+        await pick.click();
+        const menu = page.locator(".proto-menu");
+        await menu.waitFor();
+        const items = await menu.evaluate((b) => ({
+          items: [...b.querySelectorAll(".pm-item")].map((i) => [i.querySelector(".pm-name").textContent, i.querySelector(".pm-note")?.textContent || ""]),
+          inside: b.getBoundingClientRect().left >= 0 && b.getBoundingClientRect().right <= innerWidth,
+        }));
+        assert.deepEqual(items.items.map((i) => i[0]), ["Privacy Filter", "AstrLink Guard", "My detector", "Old detector"]);
+        assert.equal(items.items[2][1], "", "a plugin's model has no size or download");
+        assert.equal(items.items[3][1], pluginWords[lang]);
+        assert(items.inside, "the menu is inside the window");
+        await menu.locator(".pm-item", { hasText: "My detector" }).click();
+        await page.waitForFunction(() => !document.querySelector(".proto-menu"));
+        assert.deepEqual(posts, ["pick " + mine.model]);
+        await browser.close();
+
+        const two = await open(engine, lang, width, true, { ...gone, on: true, others: [guard] }, []);
+        t.after(() => two.browser.close());
+        const r = two.page.locator("#privacyModelRow");
+        await wheelTo(two.page, r, 300);
+        await two.page.waitForFunction((w) => document.querySelector("#privacyModelRow .sub")?.textContent === w, pluginWords[lang]);
+        const got = await r.evaluate((x) => {
+          const sub = x.querySelector(".sub"), b = x.getBoundingClientRect(), list = x.closest(".list").getBoundingClientRect();
+          return {
+            pick: x.querySelector("button.pm-model")?.textContent.trim(), segs: x.querySelectorAll(".segs").length,
+            buttons: [...x.querySelectorAll("button.text")].map((b) => b.textContent),
+            cut: sub.scrollWidth > sub.clientWidth + 1 || sub.scrollHeight > sub.clientHeight + 1,
+            inside: b.left >= list.left - 1 && b.right <= list.right + 1, wide: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+          };
+        });
+        assert.equal(got.pick, "Old detector");
+        assert.equal(got.segs, 1, "its switch stays");
+        assert.deepEqual(got.buttons, [], "nothing to delete: its files are the user's");
+        assert(!got.cut && got.inside && !got.wide, `why shown in full and inside: ${JSON.stringify(got)}`);
+        assert.deepEqual([...errors, ...two.errors], []);
       });
     }
   }

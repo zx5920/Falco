@@ -25,6 +25,7 @@ import (
 	"github.com/yetone/magpie/internal/claudetui"
 	"github.com/yetone/magpie/internal/codexrelay"
 	"github.com/yetone/magpie/internal/davsync"
+	"github.com/yetone/magpie/internal/fasttools"
 	"github.com/yetone/magpie/internal/gateway"
 	"github.com/yetone/magpie/internal/imagemcp"
 	"github.com/yetone/magpie/internal/library"
@@ -104,7 +105,7 @@ const usage = `magpie — one place to pick every agent's model
                                   or only the models ticked for it, a new one off until it is ticked
   magpie search [add <api> <key>|rm <api>]   Tavily, Brave, Exa, Firecrawl, You.com, DeepSeek, Doubao Search (Volcengine), Yuanbao Search (Tencent Cloud), TinyFish or SearXNG for web search when no provider can search
   magpie groups                   routing groups: several models agents pick as one, group/<id>
-  magpie group add <name> models=<m1>,<m2> [routing=smart|order|rotate|usage|pace|weight|free|fast|cheap|drain|expiring|fit] [stays=auto|session|turn|off]
+  magpie group add <name> models=<m1>,<m2> [routing=smart|order|rotate|usage|pace|weight|free|fast|cheap|drain|pace-drain|expiring|fit] [stays=auto|session|turn|off]
   magpie group <id> | set <id> k=v… | rm <id>   show, change or remove one (magpie group help for more)
   magpie accounts [agent] [--json]  every subscription magpie knows, with each one's allowance used and when it resets
   magpie accounts add <agent>     sign in to one more Claude, ChatGPT or Google (Gemini CLI, Antigravity) subscription
@@ -153,7 +154,7 @@ const usage = `magpie — one place to pick every agent's model
   magpie log [--path] [-n N] [-f]  where magpie's logs are, to send with a report: the app's (app.log), the service's; -n prints the app log's last N lines, -f follows it
   magpie gateway-key list|add <name> [--read-only]|rotate <id> [--key -]|remove <id>   manage the keys clients use to call a shared gateway
   magpie gateway-key limit <id> [list|off|reset [n]|remove <n>|[add] day|week|month|<N>d|<N>h --tokens N --cost USD --cache-reads --model openai/*]   a key's own limits, and what it used; --model counts only those models
-  magpie gateway-key models <id> [all|<provider>/<model>|<provider>/* ...]   the models a key may use, every one unless it names some
+  magpie gateway-key models <id> [all|none|<provider>/<model>|<provider>/* ...]   the models a key may use, every one unless it names some; none: MCP servers only
   magpie gateway-key accounts <id> [all|<provider>/<account>|<provider>/!<account>|@<group>|!@<group> ...]   the accounts a key may use, or keeps out
   magpie gateway-key groups [add <name> <account>...|set <group> <account>...|rename <group> <name>|remove <group>]   named account groups a key's accounts can name
   magpie gateway-key quotas <id> [on|off]   whether a key held to a budget, models or accounts is told the quotas of what it may use
@@ -169,6 +170,7 @@ const usage = `magpie — one place to pick every agent's model
   magpie gateway-key oidc add --key <id> --repo owner/name [--ref refs/heads/main] [--environment name] [--claim name=value]… [--ttl 1h] [--issuer URL] [--audience aud]
                                          let a CI job's OIDC token (GitHub Actions by default) be traded for a key issued under <id> (POST /v1/magpie/keys/oidc); oidc list | remove <rule id>
   magpie mcp image                the image and video generation MCP server an agent is given from the library (stdio)
+  magpie fast-tools mcp|session-start   what Antigravity's fast-tools plugin starts (magpie agy fasttools on): batched search, reads, edits and checks (stdio MCP), and the workspace snapshot hook
   magpie tools [<name>]           the tools magpie's MCP servers give agents (images, vision, web search, plugins'), with their parameters
   magpie tool <name> [--<param> <value>…] [<words>] [-o <file|folder>] [--json]   call one through the running magpie; an image or video it makes is saved
   magpie usage [today|7d|30d|all] tokens and cost per agent, model and subscription account (30d)
@@ -480,6 +482,8 @@ func run(args []string) error {
 				return browsermcp.RunArtifacts(args[2:])
 			}
 			return imagemcp.Run(args[1:])
+		case "fast-tools": // what Antigravity's fast-tools plugin starts: its MCP server and SessionStart hook
+			return fasttools.Run(args[1:])
 		case "claude-mcp-helper": // internal: stdio MCP subprocess spawned by Claude Code
 			return claudebridge.RunMCP(args[1:])
 		case claudetui.Command: // internal: Claude Code's interactive mode for the bridge
@@ -533,6 +537,9 @@ func run(args []string) error {
 	// and its auto mode classifier, on a sonnet tier that follows a main
 	// model /model has moved, to the model it moved to
 	gateway.ClassifierStandIn = agent.ClassifierStandIn
+	// and its Explore and Plan subagents, which inherit the lead's model
+	// past CLAUDE_CODE_SUBAGENT_MODEL, to the model set for its subagents
+	gateway.ClaudeSubagent = agent.ClaudeSubagent
 	// a Codex that reaches magpie for account failover alone is handed
 	// only its own models (#1385)
 	gateway.CodexOwnOnly = agent.CodexOwnOnly

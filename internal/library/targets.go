@@ -31,8 +31,14 @@ type Target struct {
 	// Field, when it is set, says the instructions are not the file itself
 	// but the string at this key path of the JSON file Instructions names
 	// (WorkBuddy's personalization.customPrompt): instr_field.go.
-	Field  string
-	MCP    *mcpFile
+	Field string
+	MCP   *mcpFile
+	// MCP2 is a second MCP file for an agent that runs more than one
+	// runtime, each reading its own format: Cindy's Pi reads
+	// pi-agent-home/mcp.json (fmtPiNative) beside its Codex config.toml.
+	// syncMCP2 writes the same servers there, tracked by the applied list
+	// MCP shares.
+	MCP2   *mcpFile
 	Skills string // the folder the agent finds skills in
 	// SkillsAlso are agents whose skills this one reads as well, as
 	// OpenCode reads Claude Code's.
@@ -394,8 +400,47 @@ func targetOf(a *agent.Agent) *Target {
 		t.MCP = &mcpFile{Path: filepath.Join(h, ".config", "alma", "mcp.json"), Format: fmtAlma}
 		t.SkillsAlso = []string{"claude", "codex"}
 	case "cindy":
-		// Cindy keeps its user-wide skills in ~/.agents/skills
+		// Cindy keeps its user-wide skills in ~/.agents/skills. Its Codex
+		// runs with CODEX_HOME at codex-home in its data folder
+		// (getDesktopCodexHome, getAuthEnv in Cindy 0.1.94's app.asar),
+		// and copies only plugin entries into that config.toml from
+		// ~/.codex's, so Codex's servers never reached a Codex session in
+		// Cindy (sunset on Discord): its [mcp_servers] there are its own.
+		// Cindy's own block in it (cindy-remote-mcp) is written only into
+		// remote hosts' configs. Its Claude Code reads the user's
+		// ~/.claude.json, Claude Code's own; a ChatGPT account added in
+		// Cindy runs Codex in a home of its own (codex-accounts), not given.
 		t.Skills = sharedSkillsDir()
+		// Cindy's Pi, its default runtime, puts Pi's own user-wide
+		// instructions in every chat's system prompt: the first there is of
+		// AGENTS.override.md, AGENTS.md, AGENTS.MD, CLAUDE.md and CLAUDE.MD
+		// in PI_CODING_AGENT_DIR, else ~/.pi/agent (readPiGlobalContext in
+		// maker-core's agents/pi/global-context.ts, resolvePiGlobalContextHome
+		// in apps/desktop's maker-host/pi-host.ts, Cindy 0.1.146; the same in
+		// 0.1.94's app.asar), not pi-agent-home, which is only its Pi's
+		// state. That is native Pi's file, so it is shared with the pi
+		// target (instrOwner writes it once) and an AGENTS.override.md of
+		// the user's is read instead, as Pi does (T_t__biu on X, #7854).
+		// Cindy's Codex reads codex-home/AGENTS.md, but that is a copy Cindy
+		// makes of ~/.codex/AGENTS.md and writes over whenever the two
+		// differ (codexGlobalRulesPaths, maker-host/codex-global-rules.ts):
+		// it reaches magpie's part through the codex target's file. Its
+		// Claude Code reads ~/.claude's CLAUDE.md (settingSources "user"),
+		// the claude target's. Teammate chats (an isolated bot profile)
+		// read none of these.
+		pd := agent.PiDir(h)
+		t.Instructions = firstThere(pd, "AGENTS.md", "AGENTS.MD", "CLAUDE.md", "CLAUDE.MD")
+		t.Override = filepath.Join(pd, "AGENTS.override.md")
+		if a.Dir != "" {
+			t.MCP = &mcpFile{Path: filepath.Join(a.Dir, "codex-home", "config.toml"), Format: fmtCodex}
+			// Cindy's Pi runs with PI_CODING_AGENT_DIR at pi-agent-home in
+			// the same folder (reconcilePiDurableRuns, the CINDY_PI_API_KEY
+			// env block in Cindy 0.1.94's app.asar); native Pi reads its
+			// servers from mcp.json there (pimcp.go), its own JSON shape, so
+			// the Codex-only write never reached a Cindy Pi session, Cindy's
+			// default runtime (POM_JUMPING on X, v0.1.4777).
+			t.MCP2 = &mcpFile{Path: filepath.Join(a.Dir, "pi-agent-home", "mcp.json"), Format: fmtPiNative}
+		}
 	case "craft-agents":
 		// Craft Agents reads user-wide skills from ~/.agents/skills
 		// (skills/storage.ts, GLOBAL_AGENT_SKILLS_DIR) beside its
@@ -412,6 +457,14 @@ func targetOf(a *agent.Agent) *Target {
 		// OpenBot reads skills only from ~/.agents/skills (home-skills.ts,
 		// HOME_SKILL_FOLDER). Its MCP servers are rows in its SQLite
 		// database (McpServerStore), which magpie doesn't write.
+		t.Skills = sharedSkillsDir()
+	case "dim":
+		// Dim reads the user's skills from ~/.agents/skills and a project's
+		// from <cwd>/.agents/skills (dim-agent-capabilities' skills
+		// catalog: SKILLS_DIR under the platform's home, $HOME or
+		// %USERPROFILE%, and under the folder it runs in; arcships/dim
+		// c68dad5). Skills only: Dim's MCP servers and instructions aren't
+		// given, and nothing here touches its sign-in or its requests.
 		t.Skills = sharedSkillsDir()
 	case "hermes":
 		// Hermes Agent reads mcp_servers from $HERMES_HOME/config.yaml, the
@@ -1272,6 +1325,12 @@ func Takes(q, kind string) (string, error) {
 		}
 	}
 	what := map[string]string{"instructions": "instructions", "mcp": "MCP servers", "skills": "skills"}[kind]
+	// one on another computer using the router (remote_agents.go) takes
+	// its servers there, while it isn't on this one: an app found by its
+	// program alone (Kiro CLI) too
+	if kind == "mcp" && a.WSL == "" && isRemote(a.ID) && targetByID(a.ID) == nil {
+		return a.ID, nil
+	}
 	// an app found by its program alone (Kiro CLI), or by its own folder
 	// (TRAE CN), that isn't here: told so, not recorded and then given
 	// nothing, as Targets leaves it out

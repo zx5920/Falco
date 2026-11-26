@@ -43,6 +43,13 @@ var hostJS []byte
 //go:embed pi.js
 var piJS []byte
 
+// opensJS is preloaded into the host and the Bun scripts it starts: it
+// refuses a command that would open an empty target, which opens the
+// program's own folder (plugin-work) in Explorer instead.
+//
+//go:embed opens.js
+var opensJS []byte
+
 // message is a line the host writes.
 type message struct {
 	ID     int64           `json:"id"`
@@ -177,8 +184,10 @@ var (
 	frameOverhead = 2048
 	rpcReserve    = 64
 	// maxWireLine bounds one line the child writes: a frame's base64 is well
-	// under it, and so is any RPC result, so a child that never ends a line
-	// fails the host rather than making it allocate without bound.
+	// under it, so a child that never ends a line fails the host rather than
+	// making it allocate without bound. The child is told it at init
+	// (lineMax): an answer longer than it fails its own call there instead,
+	// and a gateway begin no hook changed sends no body back (#5699).
 	maxWireLine = 32 << 20
 	// streamWait is how long a fetch waits for a stream's window to come
 	// free when the budget's are all held, while its request lives. Past
@@ -534,6 +543,8 @@ var live = struct {
 	hosts map[*host]bool
 	// ended is set by EndHosts: no host starts after it
 	ended bool
+	// efficient puts running and newly started hosts in Windows' EcoQoS
+	efficient bool
 }{hosts: map[*host]bool{}}
 
 // errHostsEnded is a host asked for once EndHosts has run.
@@ -1097,6 +1108,10 @@ func startOn(ctx context.Context, bun string) (*host, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	opens, err := hostScript("opens", opensJS)
+	if err != nil {
+		return nil, false, err
+	}
 	if err := os.MkdirAll(settings.Dir(), 0o700); err != nil {
 		return nil, false, err
 	}
@@ -1128,7 +1143,7 @@ func startOn(ctx context.Context, bun string) (*host, bool, error) {
 	}
 	// the host outlives the request that started it
 	proxy := hostProxy(env()) // what bunCommand gives it
-	cmd := bunCommand(context.Background(), bun, settings.Dir(), "run", js)
+	cmd := bunCommand(context.Background(), bun, settings.Dir(), "run", "--preload", opens, js)
 	addr := hostAddr(cmd.Env)
 	log.Printf("plugin: host starts with %s", netLine(cmd.Env))
 	cmd.Env = hostEnv(cmd.Env)
@@ -1154,6 +1169,9 @@ func startOn(ctx context.Context, bun string) (*host, bool, error) {
 	if err != nil {
 		live.Unlock()
 		return nil, false, err
+	}
+	if live.efficient {
+		tree.SetEfficiencyMode(true)
 	}
 	hctx, hcancel := context.WithCancel(context.Background())
 	h := &host{
@@ -1222,6 +1240,7 @@ func startOn(ctx context.Context, bun string) (*host, bool, error) {
 		"plugins":       items,
 		"loadMillis":    pluginLoadWait.Milliseconds(),
 		"listMillis":    pluginListWait.Milliseconds(),
+		"lineMax":       h.lineLimit(),
 		"heavy": map[string]any{
 			"mb":          heavyMB,
 			"afterMillis": heavyAfter.Milliseconds(),
